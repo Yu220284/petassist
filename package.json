@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "electron": "wait-on http://127.0.0.1:3000 && electron .",
+    "electron": "node electron/stop.js && wait-on http://127.0.0.1:3000 && electron .",
+    "electron:stop": "node electron/stop.js",
     "dev:pet": "concurrently -k \"npm run dev\" \"npm run electron\""
   },
   "dependencies": {

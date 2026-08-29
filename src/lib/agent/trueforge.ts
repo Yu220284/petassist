@@ -107,6 +107,7 @@ export async function runTrueForgeTurn(
 
   const events = new Map<string, Record<string, unknown>>();
   let text = "";
+  let streamed = "";
   let progress = 12;
   let pending: PendingAction | undefined;
   let turnError: string | undefined;
@@ -115,17 +116,32 @@ export async function runTrueForgeTurn(
     const type = typeof event.type === "string" ? event.type : "";
     const id = pick<string>(event, "id");
     if (type.endsWith(".delta") && id) {
-      const base = events.get(id);
-      if (base) mergeDelta(base, event);
+      const base =
+        events.get(id) ??
+        ({
+          ...event,
+          type: type.replace(/\.delta$/, ""),
+          content: "",
+        } as Record<string, unknown>);
+      mergeDelta(base, event);
+      events.set(id, base);
     } else if (id) {
       events.set(id, event);
     }
 
-    if (type === "model.message" || type === "model.message.delta") {
+    if (type === "model.message.delta") {
+      const extra = textFromContent(event.content);
+      if (extra) {
+        streamed += extra;
+        text = streamed;
+      }
+      progress = Math.min(92, progress + 4);
+      onEvent?.({ progress, text });
+    } else if (type === "model.message") {
       const idKey = id ?? pick<string>(event, "id");
       const msg = (idKey && events.get(idKey)) || event;
       const next = textFromContent(msg.content);
-      if (next) text = next;
+      if (next && next.length >= text.length) text = next;
       progress = Math.min(92, progress + 4);
       onEvent?.({ progress, text });
     }

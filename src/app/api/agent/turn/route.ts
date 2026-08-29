@@ -1,4 +1,5 @@
 import { runAgentTurn } from "@/lib/agent/run";
+import { grantsFromRequest, isLoopbackRequest } from "@/lib/agent/guard";
 import { isLocale, type Locale } from "@/lib/i18n/types";
 import type { AgentStreamEvent } from "@/lib/agent/types";
 
@@ -7,6 +8,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 export async function POST(req: Request) {
+  if (!isLoopbackRequest(req)) {
+    return new Response("loopback only", { status: 403 });
+  }
   const body = (await req.json().catch(() => ({}))) as {
     petId?: string;
     locale?: string;
@@ -33,7 +37,11 @@ export async function POST(req: Request) {
             sessionId: body.sessionId,
             message: body.message,
             approval: body.approval,
-            grants: body.grants,
+            grants: grantsFromRequest(
+              body.grants,
+              req,
+              body.requireHarness === true
+            ),
             config: body.config,
             requireHarness: body.requireHarness === true,
           },

@@ -1,7 +1,23 @@
 const { app, BrowserWindow, ipcMain, screen, dialog } = require("electron");
 const path = require("path");
 
-const BASE = process.env.PETASSIST_URL || "http://127.0.0.1:3000";
+function deskBase() {
+  const fallback = "http://127.0.0.1:3000";
+  const raw = process.env.PETASSIST_URL || fallback;
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.toLowerCase();
+    const loopback =
+      host === "127.0.0.1" || host === "localhost" || host === "::1";
+    const http = url.protocol === "http:" || url.protocol === "https:";
+    if (loopback && http) return url.origin;
+  } catch {
+    /* fall through */
+  }
+  return fallback;
+}
+
+const BASE = deskBase();
 const STICKY_W = 110;
 const STICKY_H = 200;
 const TOP_SNAP_PX = 56;
@@ -22,6 +38,13 @@ const stickies = new Map();
 
 function preloadPath() {
   return path.join(__dirname, "preload.js");
+}
+
+function lockToDesk(win) {
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("will-navigate", (event, next) => {
+    if (!next.startsWith(BASE)) event.preventDefault();
+  });
 }
 
 function createMainWindow() {
@@ -45,6 +68,7 @@ function createMainWindow() {
     },
   });
 
+  lockToDesk(mainWindow);
   mainWindow.loadURL(`${BASE}/`);
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -118,6 +142,7 @@ function placeSticky(id, x, y) {
     webPreferences: stickyWebPrefs(),
   });
 
+  lockToDesk(win);
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.setAlwaysOnTop(true, "floating");
   if (process.platform === "darwin") {
@@ -232,13 +257,41 @@ ipcMain.handle("dialog:openDirectory", async (event) => {
   return filePaths[0] ?? null;
 });
 
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    createMainWindow();
+  });
+}
+
+function closeStickies() {
+  for (const win of stickies.values()) {
+    if (!win.isDestroyed()) win.destroy();
+  }
+  stickies.clear();
+  hiddenStickies.clear();
+}
+
 app.whenReady().then(() => {
+  if (!gotLock) return;
   createMainWindow();
   app.on("activate", () => {
     createMainWindow();
   });
 });
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+app.on("before-quit", () => {
+  closeStickies();
 });
+
+app.on("window-all-closed", () => {
+  app.quit();
+});
+
+for (const sig of ["SIGINT", "SIGTERM"]) {
+  process.on(sig, () => {
+    app.quit();
+  });
+}

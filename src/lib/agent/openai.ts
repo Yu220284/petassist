@@ -108,29 +108,13 @@ export async function runOpenAiTurn(opts: {
       return { text: (text || "").trim(), messages };
     }
 
-    const gated = calls.find((c) =>
+    const gated = calls.filter((c) =>
       isGatedTool(c.function.name, c.function.arguments, grants)
     );
-    if (gated) {
-      return {
-        text: (text || askFor(opts.locale, gated.function.name)).trim(),
-        messages,
-        pending: {
-          kind: "tool_approval",
-          threadId: "openai",
-          toolCallId: gated.id,
-          toolName: gated.function.name,
-          argsText: gated.function.arguments,
-          openaiToolCall: {
-            id: gated.id,
-            name: gated.function.name,
-            arguments: gated.function.arguments,
-          },
-        },
-      };
-    }
-
-    for (const call of calls) {
+    const open = calls.filter(
+      (c) => !isGatedTool(c.function.name, c.function.arguments, grants)
+    );
+    for (const call of open) {
       const result = await executeTool(
         call.function.name,
         call.function.arguments,
@@ -145,6 +129,39 @@ export async function runOpenAiTurn(opts: {
         tool_call_id: call.id,
         content: result,
       });
+    }
+    const [firstGated, ...restGated] = gated;
+    if (firstGated) {
+      for (const extra of restGated) {
+        messages.push({
+          role: "tool",
+          tool_call_id: extra.id,
+          content: JSON.stringify({
+            ok: false,
+            skipped: true,
+            reason:
+              opts.locale === "ja"
+                ? "先に別の Allow 待ちがあります"
+                : "Queued behind another Allow",
+          }),
+        });
+      }
+      return {
+        text: (text || askFor(opts.locale, firstGated.function.name)).trim(),
+        messages,
+        pending: {
+          kind: "tool_approval",
+          threadId: "openai",
+          toolCallId: firstGated.id,
+          toolName: firstGated.function.name,
+          argsText: firstGated.function.arguments,
+          openaiToolCall: {
+            id: firstGated.id,
+            name: firstGated.function.name,
+            arguments: firstGated.function.arguments,
+          },
+        },
+      };
     }
   }
 

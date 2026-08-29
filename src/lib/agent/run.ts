@@ -91,19 +91,25 @@ export async function runAgentTurn(req: TurnRequest, emit: Emit) {
     try {
       if (session.runtime === "trueforge" && session.trueforgeSessionId) {
         const input = approvalInput(session, req.approval, locale);
-        session.pending = undefined;
-        putSession(session);
-        const result = await runTrueForgeTurn(
-          session.trueforgeSessionId,
-          input,
-          (event) => {
-            emit({ type: "progress", progress: event.progress });
-            if (event.text) emit({ type: "text", text: event.text });
-            if (event.harness) emit({ type: "harness", ...event.harness });
-          }
-        );
-        finishTurn(session, result.text, result.pending, emit, result.error);
-        return;
+        const held = session.pending;
+        try {
+          const result = await runTrueForgeTurn(
+            session.trueforgeSessionId,
+            input,
+            (event) => {
+              emit({ type: "progress", progress: event.progress });
+              if (event.text) emit({ type: "text", text: event.text });
+              if (event.harness) emit({ type: "harness", ...event.harness });
+            }
+          );
+          session.pending = undefined;
+          finishTurn(session, result.text, result.pending, emit, result.error);
+          return;
+        } catch (err) {
+          session.pending = held;
+          putSession(session);
+          throw err;
+        }
       }
       if (session.runtime === "openai") {
         const result = await resumeOpenAiApproval(

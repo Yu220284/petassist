@@ -79,9 +79,9 @@ npx @truefoundry/trueforge
 4. 同じ PR に push し、必要ならもう一度 `/agentic_review`
 5. マージした公開 PR の URL を下に書く
 
-- Representative merged PR: https://github.com/Yu220284/pockassist/pull/1 _(merge after Qodo review)_
-- What Qodo surfaced / what we changed or dismissed: _（レビュー後に1〜2文）_
-- Follow-up review: _（同じ PR の再レビュー）_
+- Representative merged PR: https://github.com/Yu220284/pockassist/pull/1 _(merge after follow-up Qodo review)_
+- What Qodo surfaced / what we changed or dismissed: High — loopback-only agent API and no unsigned `full_access`; accumulate TrueForge SSE deltas; complete sibling OpenAI tool responses; deny `run_command` unless `PETASSIST_ALLOW_FULL_ACCESS=1`. Medium — keep pending Allow across failed resumes; reset is loopback-only; Electron loads only localhost and blocks other navigations.
+- Follow-up review: `/agentic_review` after the fix commit
 
 スクショは補助、公開 PR リンクが証拠です。
 

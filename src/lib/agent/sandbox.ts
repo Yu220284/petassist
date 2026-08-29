@@ -25,6 +25,16 @@ import {
 const execFileAsync = promisify(execFile);
 const TIMEOUT_MS = { workspace: 20_000, full_access: 60_000 };
 
+function childEnv(): Record<string, string> {
+  const keep = ["PATH", "HOME", "USER", "TMPDIR", "LANG", "LC_ALL", "TERM"];
+  const env: Record<string, string> = {};
+  for (const key of keep) {
+    const value = process.env[key];
+    if (value) env[key] = value;
+  }
+  return env;
+}
+
 export const DESK_READ_TOOLS = ["list_dir", "read_file", "glob_files"] as const;
 export const DESK_WRITE_TOOLS = [
   "write_file",
@@ -412,6 +422,13 @@ export async function executeDeskTool(
       if (!command.trim()) {
         return fail(locale === "ja" ? "コマンドが空です" : "Empty command");
       }
+      if (grants.sandbox !== "full_access") {
+        return fail(
+          locale === "ja"
+            ? "シェルはフルアクセス（PETASSIST_ALLOW_FULL_ACCESS=1）のときだけです。ファイル用ツールを使ってください"
+            : "Shell needs full access (PETASSIST_ALLOW_FULL_ACCESS=1). Use the file tools."
+        );
+      }
       const cwdInput =
         asString(args.cwd) || roots[0] || process.cwd();
       const resolved = await resolve(cwdInput);
@@ -426,7 +443,7 @@ export async function executeDeskTool(
           cwd: resolved.path,
           timeout,
           maxBuffer: 32 * 1024,
-          env: process.env,
+          env: childEnv() as NodeJS.ProcessEnv,
         });
         return JSON.stringify({
           ok: true,

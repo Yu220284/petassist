@@ -262,7 +262,7 @@ export const ja: Messages = {
     remove: "外す",
     fullTitle: "隔離の外です",
     fullBody:
-      "TrueForge のサンドボックスからは Finder は見えません。それは設計です。Petassist がこのパソコン側で触ります。外への送信は Allow のままです。",
+      "TrueForge のサンドボックスからは Finder は見えません。それは設計です。シェルは PETASSIST_ALLOW_FULL_ACCESS=1 のときだけ。外への送信は Allow のままです。",
     confirm: "任せる",
     cancel: "やめる",
   },
@@ -495,7 +495,7 @@ export const en: Messages = {
     remove: "Remove",
     fullTitle: "Outside isolation",
     fullBody:
-      "TrueForge’s sandbox cannot see Finder. That is by design. Petassist touches this Mac. Outbound send still needs Allow.",
+      "TrueForge’s sandbox cannot see Finder. That is by design. Shell needs PETASSIST_ALLOW_FULL_ACCESS=1. Outbound send still needs Allow.",
     confirm: "Grant",
     cancel: "Cancel",
   },
