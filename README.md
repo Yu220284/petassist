@@ -89,6 +89,10 @@ npx @truefoundry/trueforge
 
 Cursor 上のコーディング支援を使っています。エージェントの役割分担、TrueForge の配線、承認 UI の判断は参加者が確認しています。
 
+## Field report
+
+提出用ブログの草稿。追記専用の HTML 1枚: [public/field-report.html](public/field-report.html)（開発中は `/field-report.html`）。過去の節は書き換えない。
+
 ## ライセンス・資産
 
 - 動物アイコン: Nanashino `animalicon_kabane`（権利者の許諾範囲で使用）
