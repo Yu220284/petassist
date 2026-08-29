@@ -79,7 +79,7 @@ npx @truefoundry/trueforge
 4. 同じ PR に push し、必要ならもう一度 `/agentic_review`
 5. マージした公開 PR の URL を下に書く
 
-- Representative merged PR: _（最初の Qodo レビュー済みマージの URL）_
+- Representative merged PR: https://github.com/Yu220284/pockassist/pull/1 _(merge after Qodo review)_
 - What Qodo surfaced / what we changed or dismissed: _（レビュー後に1〜2文）_
 - Follow-up review: _（同じ PR の再レビュー）_
 
