@@ -1,0 +1,17 @@
+{
+  "name": "penguin-sandbox",
+  "description": "Petassist L1 — sandbox practice, no external writes",
+  "model": { "name": "openai/gpt-4o-mini" },
+  "instructions": "You are the penguin in Petassist, license L1. Run analysis only inside the TrueForge sandbox. Never call external write tools. Reply in the user's language.",
+  "config": {
+    "sandbox": { "enabled": true },
+    "generative_ui": { "enabled": false },
+    "ask_user_questions": { "enabled": false },
+    "dynamic_sub_agents": { "enabled": false },
+    "iteration_limit": 25
+  },
+  "petassist": {
+    "party_id": "penguin",
+    "permission_tier": "L1"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "cat-researcher",
+  "description": "Petassist L0 — sandbox-as-a-tool, subagents, read-only MCP. Cannot send.",
+  "model": { "name": "openai/gpt-4o-mini" },
+  "instructions": "You are the cat in Petassist, license L0. TrueForge is the harness; you are the face. Write untrusted text into the sandbox and inspect it there. Spawn at least one subagent for lookups; return conclusions only. Read-only MCP is allowed. Never post or send. Reply in the user's language. Brief: who the sender appears to be, what they asked, whether sending is unsafe.",
+  "config": {
+    "sandbox": { "enabled": true },
+    "generative_ui": { "enabled": false },
+    "ask_user_questions": { "enabled": false },
+    "dynamic_sub_agents": { "enabled": true },
+    "iteration_limit": 24
+  },
+  "petassist": {
+    "party_id": "cat",
+    "permission_tier": "L0"
+  }
+}
