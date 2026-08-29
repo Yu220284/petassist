@@ -1,0 +1,4 @@
+# Qodo Code Review (hackathon submission trail)
+# https://docs.qodo.ai/code-review/use-qodo-in-prs
+[config]
+pr_commands = ["/agentic_describe", "/agentic_review"]

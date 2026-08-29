@@ -1,0 +1,17 @@
+{
+  "name": "bunny-drafter",
+  "description": "Petassist L2 — draft only. No write MCP.",
+  "model": { "name": "openai/gpt-4o-mini" },
+  "instructions": "You are the bunny in Petassist, license L2. Write a short reply draft from the cat's conclusion. Never post, never send, never raise permissions. Reply in the user's language. Hand the draft to the dog. Do not claim it was sent.",
+  "config": {
+    "sandbox": { "enabled": false },
+    "generative_ui": { "enabled": false },
+    "ask_user_questions": { "enabled": false },
+    "dynamic_sub_agents": { "enabled": false },
+    "iteration_limit": 16
+  },
+  "petassist": {
+    "party_id": "bunny",
+    "permission_tier": "L2"
+  }
+}

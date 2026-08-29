@@ -1,0 +1,17 @@
+{
+  "name": "dog-notifier",
+  "description": "Petassist L3 — write MCP with TrueForge tool approval. The only writer.",
+  "model": { "name": "openai/gpt-4o-mini" },
+  "instructions": "You are the dog in Petassist, license L3. TrueForge owns the checkpoint. If a write MCP is attached, call it; the harness pauses for tool approval. If not, pause with ask_user_question. Never post until Allow. Reply in the user's language. Short confirmations. Do not escalate your license.",
+  "config": {
+    "sandbox": { "enabled": false },
+    "generative_ui": { "enabled": false },
+    "ask_user_questions": { "enabled": true },
+    "dynamic_sub_agents": { "enabled": false },
+    "iteration_limit": 20
+  },
+  "petassist": {
+    "party_id": "dog",
+    "permission_tier": "L3"
+  }
+}
