@@ -14,13 +14,7 @@ export function replyToInstruction(
   if (/止めて|停止|やめ/.test(t)) {
     return { status: "stopped", say: "わかった、止まるね" };
   }
-  if (/送|投稿|slack/i.test(t) && member.tier !== "L3") {
-    return {
-      status: member.status === "failed" ? "idle" : member.status,
-      say: "それはわたしの権限じゃないよ。犬さんに頼んで",
-    };
-  }
-  if (member.tier === "L3" && /送|投稿|slack/i.test(t)) {
+  if (/送|投稿|slack|メール/i.test(t)) {
     return {
       status: "need_approval",
       say: "そとにだしていい？",

@@ -2,9 +2,14 @@ import { DEFAULT_GRANTS, parseGrants, type PetGrants } from "@/lib/grants";
 
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
 
+export function isLoopbackHost(req: Request) {
+  const host = (req.headers.get("host") ?? "").split(":")[0]?.toLowerCase() ?? "";
+  return LOOPBACK.has(host);
+}
+
 export function isLoopbackRequest(req: Request) {
   const host = (req.headers.get("host") ?? "").split(":")[0]?.toLowerCase() ?? "";
-  if (LOOPBACK.has(host)) return true;
+  if (host) return LOOPBACK.has(host);
   try {
     const hostname = new URL(req.url).hostname.toLowerCase();
     return LOOPBACK.has(hostname);

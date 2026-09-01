@@ -17,9 +17,11 @@ export async function POST(req: Request) {
     sessionId?: string;
     message?: string;
     approval?: "allow" | "deny";
+    choiceId?: string;
     grants?: unknown;
     config?: unknown;
     requireHarness?: boolean;
+    history?: { role: "user" | "assistant"; content: string }[];
   };
   const locale: Locale = isLocale(body.locale) ? body.locale : "ja";
   const petId = typeof body.petId === "string" ? body.petId : "";
@@ -37,6 +39,7 @@ export async function POST(req: Request) {
             sessionId: body.sessionId,
             message: body.message,
             approval: body.approval,
+            choiceId: typeof body.choiceId === "string" ? body.choiceId : undefined,
             grants: grantsFromRequest(
               body.grants,
               req,
@@ -44,6 +47,7 @@ export async function POST(req: Request) {
             ),
             config: body.config,
             requireHarness: body.requireHarness === true,
+            history: Array.isArray(body.history) ? body.history : undefined,
           },
           emit
         );

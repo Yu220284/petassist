@@ -18,21 +18,21 @@ export function LocaleToggle({ className }: { className?: string }) {
         type="button"
         className={cn(
           "rounded-full px-2 py-0.5",
-          locale === "ja" ? "bg-white text-[#302c55] shadow-sm" : "text-slate-500"
-        )}
-        onClick={() => setLocale("ja")}
-      >
-        日本語
-      </button>
-      <button
-        type="button"
-        className={cn(
-          "rounded-full px-2 py-0.5",
           locale === "en" ? "bg-white text-[#302c55] shadow-sm" : "text-slate-500"
         )}
         onClick={() => setLocale("en")}
       >
         EN
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "rounded-full px-2 py-0.5",
+          locale === "ja" ? "bg-white text-[#302c55] shadow-sm" : "text-slate-500"
+        )}
+        onClick={() => setLocale("ja")}
+      >
+        日本語
       </button>
     </div>
   );

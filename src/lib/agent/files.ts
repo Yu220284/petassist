@@ -341,3 +341,38 @@ export async function copyFile(source: string, dest: string) {
   const st = await fs.stat(dest);
   return { ok: true, path: dest, bytes: st.size };
 }
+
+export async function movePath(source: string, dest: string) {
+  await fs.mkdir(path.dirname(dest), { recursive: true });
+  try {
+    await fs.rename(source, dest);
+  } catch {
+    await fs.copyFile(source, dest);
+    await fs.rm(source, { recursive: true, force: true });
+  }
+  const st = await fs.stat(dest);
+  return { ok: true, path: dest, bytes: st.size, moved: true };
+}
+
+export async function replaceInFile(
+  dest: string,
+  oldString: string,
+  newString: string,
+  replaceAll = false
+) {
+  if (!oldString) throw new Error("old_string is empty");
+  const text = await fs.readFile(dest, "utf8");
+  const hits = text.split(oldString).length - 1;
+  if (hits === 0) {
+    throw new Error("old_string was not found in the file");
+  }
+  if (!replaceAll && hits > 1) {
+    throw new Error(`old_string matched ${hits} times; pass replace_all or a unique snippet`);
+  }
+  const next = replaceAll
+    ? text.split(oldString).join(newString)
+    : text.replace(oldString, newString);
+  await fs.writeFile(dest, next, "utf8");
+  const st = await fs.stat(dest);
+  return { ok: true, path: dest, bytes: st.size, replacements: replaceAll ? hits : 1 };
+}

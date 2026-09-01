@@ -98,27 +98,24 @@ export async function listMcpCatalog(): Promise<McpCatalog> {
 }
 
 export function mcpServersFor(
-  petId: "cat" | "bunny" | "dog",
+  _petId: string,
   catalog: McpCatalog
 ): McpServerRef[] {
-  if (petId === "cat" && catalog.search) {
-    return [
-      {
-        name: catalog.search,
-        enable_tools: ["@read-only"],
-        preload: false,
-      },
-    ];
+  const servers: McpServerRef[] = [];
+  if (catalog.search) {
+    servers.push({
+      name: catalog.search,
+      enable_tools: ["@read-only"],
+      preload: false,
+    });
   }
-  if (petId === "dog" && catalog.write) {
-    return [
-      {
-        name: catalog.write,
-        enable_tools: ["@all"],
-        require_approval_for_tools: ["@write", "@destructive"],
-        preload: false,
-      },
-    ];
+  if (catalog.write) {
+    servers.push({
+      name: catalog.write,
+      enable_tools: ["@all"],
+      require_approval_for_tools: ["@write", "@destructive"],
+      preload: false,
+    });
   }
-  return [];
+  return servers;
 }

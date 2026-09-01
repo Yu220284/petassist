@@ -44,9 +44,12 @@ export function useDesk() {
     pinned,
     hidden,
     pin: (id: string) => window.petassist?.pin(id),
-    pinAllTop: () => window.petassist?.pinAllTop(),
+    pinAllTop: (ids?: string[], opts?: { confirm?: boolean }) =>
+      window.petassist?.pinAllTop(ids, opts),
     unpin: (id: string) => window.petassist?.unpin(id),
     hideSticky: (id: string) => window.petassist?.hideSticky(id),
+    leapPet: (id: string, motion: "in" | "out") =>
+      window.petassist?.leapPet(id, motion),
     showSticky: (id: string) => window.petassist?.showSticky(id),
     showDock: () => window.petassist?.showDock(),
     openDirectory: () => window.petassist?.openDirectory() ?? Promise.resolve(null),

@@ -27,19 +27,22 @@ type LocaleContextValue = {
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 function detectLocale(): Locale {
-  if (typeof window === "undefined") return "ja";
+  if (typeof window === "undefined") return "en";
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (isLocale(stored)) return stored;
   } catch {
     /* ignore */
   }
-  const lang = window.navigator.language.toLowerCase();
-  return lang.startsWith("ja") ? "ja" : "en";
+  if (window.petassist) {
+    const lang = window.navigator.language.toLowerCase();
+    return lang.startsWith("ja") ? "ja" : "en";
+  }
+  return "en";
 }
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("ja");
+  const [locale, setLocaleState] = useState<Locale>("en");
 
   useEffect(() => {
     setLocaleState(detectLocale());

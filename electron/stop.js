@@ -21,6 +21,14 @@ function pidsMatching(needle) {
     .filter((pid) => Number.isInteger(pid) && pid > 0 && pid !== process.pid);
 }
 
+function settle() {
+  try {
+    execFileSync("sleep", ["0.4"], { stdio: "ignore" });
+  } catch {
+    /* ignore */
+  }
+}
+
 const pids = [...new Set(needles.flatMap(pidsMatching))];
 if (!pids.length) process.exit(0);
 
@@ -33,7 +41,10 @@ try {
 const start = Date.now();
 while (Date.now() - start < 1500) {
   const left = [...new Set(needles.flatMap(pidsMatching))];
-  if (!left.length) process.exit(0);
+  if (!left.length) {
+    settle();
+    process.exit(0);
+  }
 }
 
 try {
@@ -41,3 +52,5 @@ try {
 } catch {
   /* ignore */
 }
+settle();
+

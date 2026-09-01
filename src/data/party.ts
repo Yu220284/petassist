@@ -5,6 +5,7 @@ export type PartyStatus =
   | "need_approval"
   | "stopped"
   | "failed"
+  | "done"
   | "empty";
 
 export type PartyMember = {
@@ -22,7 +23,36 @@ export type PartyMember = {
   bubbles: Record<PartyStatus, string[]>;
 };
 
-export const LIVE_IDS = ["cat", "bunny", "dog"] as const;
+export const LIVE_IDS = [
+  "cat",
+  "bunny",
+  "dog",
+  "penguin",
+  "chick",
+  "raccoondog",
+] as const;
+
+export type LivePetId = (typeof LIVE_IDS)[number];
+
+/** Default desk order: higher license first, then loyal / capable image. */
+export const DEFAULT_PARTY_ORDER = [
+  "dog",
+  "bunny",
+  "penguin",
+  "chick",
+  "cat",
+  "raccoondog",
+] as const;
+
+export function sortByOrder<T extends { id: string }>(
+  items: T[],
+  order: readonly string[]
+): T[] {
+  const rank = new Map(order.map((id, i) => [id, i]));
+  return [...items].sort(
+    (a, b) => (rank.get(a.id) ?? 99) - (rank.get(b.id) ?? 99)
+  );
+}
 
 export const TIER_LABEL: Record<PermissionTier, string> = {
   L0: "みるだけ",
@@ -31,19 +61,13 @@ export const TIER_LABEL: Record<PermissionTier, string> = {
   L3: "しょうにんつき",
 };
 
-export const TIER_COLOR: Record<PermissionTier, string> = {
-  L0: "bg-slate-400",
-  L1: "bg-sky-500",
-  L2: "bg-amber-400",
-  L3: "bg-orange-500",
-};
-
 export const STATUS_LABEL: Record<PartyStatus, string> = {
   idle: "稼働中",
   working: "作業中",
   need_approval: "しょうにんまち",
   stopped: "停止",
   failed: "失敗",
+  done: "完了",
   empty: "空き",
 };
 
@@ -53,6 +77,7 @@ export const STATUS_DOT: Record<PartyStatus, string> = {
   need_approval: "bg-orange-500",
   stopped: "bg-slate-400",
   failed: "bg-red-500",
+  done: "bg-emerald-500",
   empty: "bg-slate-300",
 };
 
@@ -62,29 +87,40 @@ const quiet: Record<PartyStatus, string[]> = {
   need_approval: [],
   stopped: ["いま止まってるよ"],
   failed: ["うまくいかなかった…"],
+  done: [],
   empty: [],
 };
 
+const deskTools = [
+  "web_search",
+  "save_draft",
+  "slack_post",
+  "x_post",
+  "generate_image",
+  "make_sheet",
+];
+
 /** Demo party: max 6 slots. Empty slots use status empty. */
-export const INITIAL_PARTY: PartyMember[] = [
+const PARTY_SEED: PartyMember[] = [
   {
     id: "cat",
     name: "cat",
     nameJa: "ねこ",
-    role: "リサーチ",
+    role: "デスク",
     icon: "/party/cat/02.png",
     accent: "#e8a07a",
     progress: 0,
     tier: "L0",
     status: "idle",
-    allowedTools: ["web_search", "sandbox_run"],
-    deniedTools: ["slack_post", "send_message"],
+    allowedTools: deskTools,
+    deniedTools: ["elevate_permissions"],
     bubbles: {
-      idle: ["みてるよ", "権限はみるだけ！"],
-      working: ["サンドボックスでしらべてる…", "ソースあつめてるよ"],
-      need_approval: ["それ、わたしの権限じゃないよ"],
-      stopped: ["しらべるの、いったん停止"],
-      failed: ["ソース、読めなかった…", "しらべそこねた"],
+      idle: ["みてるよ", "だよ・ね、まかせて"],
+      working: ["やってるよ…", "ちょっと待ってね"],
+      need_approval: ["そとにだしていい？", "送信ボタン、待ってるよ"],
+      stopped: ["いったん停止"],
+      failed: ["うまくいかなかった…"],
+      done: [],
       empty: [],
     },
   },
@@ -92,19 +128,19 @@ export const INITIAL_PARTY: PartyMember[] = [
     id: "penguin",
     name: "penguin",
     nameJa: "ぺんぎん",
-    role: "データ",
+    role: "デスク",
     icon: "/party/penguin/04.png",
     accent: "#6ba8c9",
     progress: 0,
     tier: "L1",
-    status: "stopped",
-    allowedTools: ["sandbox_run", "csv_analyze"],
-    deniedTools: ["slack_post", "db_write"],
+    status: "idle",
+    allowedTools: deskTools,
+    deniedTools: ["elevate_permissions"],
     bubbles: {
       ...quiet,
-      idle: ["さんぼっくすだいすき", "よちよち待機中"],
-      working: ["さんぼっくすでれんしゅうちゅう", "しゅうちゅう…"],
-      need_approval: ["そとの書き込みはむり！"],
+      idle: ["よちよち待機中", "さんぼっくすだいすき"],
+      working: ["しゅうちゅう…", "よちよち作業中"],
+      need_approval: ["そとにだしていい？", "送信、待ってるよ"],
       stopped: ["きょうは動かないよ"],
     },
   },
@@ -112,20 +148,21 @@ export const INITIAL_PARTY: PartyMember[] = [
     id: "bunny",
     name: "bunny",
     nameJa: "うさぎ",
-    role: "文案",
+    role: "デスク",
     icon: "/party/bunny/02.png",
     accent: "#e7a4b6",
     progress: 0,
     tier: "L2",
     status: "idle",
-    allowedTools: ["draft_reply", "edit_draft"],
-    deniedTools: ["slack_post", "send_message"],
+    allowedTools: deskTools,
+    deniedTools: ["elevate_permissions"],
     bubbles: {
-      idle: ["そうあんならまかせて", "下書き係だよ"],
+      idle: ["そうあんならまかせて", "送信直前まで待つよ"],
       working: ["文案つくってる…", "ちょっと待ってね"],
-      need_approval: ["投稿は犬さんにお願いして！"],
-      stopped: ["下書き、止まってる"],
-      failed: ["文案、まとまらなかった"],
+      need_approval: ["そとにだしていい？", "送信ボタン、待ってるよ"],
+      stopped: ["いったん停止"],
+      failed: ["うまくいかなかった…"],
+      done: [],
       empty: [],
     },
   },
@@ -133,20 +170,21 @@ export const INITIAL_PARTY: PartyMember[] = [
     id: "dog",
     name: "dog",
     nameJa: "いぬ",
-    role: "通知オペ",
+    role: "デスク",
     icon: "/party/dog/09.png",
     accent: "#d4b15a",
     progress: 0,
     tier: "L3",
     status: "idle",
-    allowedTools: ["slack_post", "notify"],
-    deniedTools: ["elevate_permissions", "billing"],
+    allowedTools: deskTools,
+    deniedTools: ["elevate_permissions"],
     bubbles: {
-      idle: ["てくてく待機中", "本番はしょうにんつき！"],
+      idle: ["てくてく待機中", "フォルダの中でつくるよ"],
       working: ["じゅんびちゅう…", "てくてく作業中"],
       need_approval: ["そとにだしていい？", "トレーナーさん！"],
-      stopped: ["通知、止まってるよ"],
-      failed: ["送れなかった…", "投稿ミスった"],
+      stopped: ["いったん停止"],
+      failed: ["うまくいかなかった…", "投稿ミスった"],
+      done: [],
       empty: [],
     },
   },
@@ -154,19 +192,19 @@ export const INITIAL_PARTY: PartyMember[] = [
     id: "chick",
     name: "chick",
     nameJa: "ひよこ",
-    role: "予定・街",
+    role: "デスク",
     icon: "/party/chick/02.png",
     accent: "#e3c45a",
     progress: 0,
     tier: "L1",
-    status: "stopped",
-    allowedTools: ["eta_mock", "calendar_read"],
-    deniedTools: ["book_ride"],
+    status: "idle",
+    allowedTools: deskTools,
+    deniedTools: ["elevate_permissions"],
     bubbles: {
       ...quiet,
-      idle: ["パタパタ待機", "ETAみれるよ"],
-      working: ["ばしょしらべ中", "パタパタ…"],
-      need_approval: ["配車かくていはむり！"],
+      idle: ["パタパタ待機", "まかせてね"],
+      working: ["パタパタ…", "やってるよ"],
+      need_approval: ["そとにだしていい？", "送信、待ってるよ"],
       stopped: ["きょうはおやすみ"],
     },
   },
@@ -174,23 +212,28 @@ export const INITIAL_PARTY: PartyMember[] = [
     id: "raccoondog",
     name: "raccoondog",
     nameJa: "たぬき",
-    role: "監査",
+    role: "デスク",
     icon: "/party/raccoondog/06.png",
     accent: "#b7a894",
     progress: 0,
     tier: "L0",
-    status: "stopped",
-    allowedTools: ["audit_action", "warn"],
-    deniedTools: ["slack_post", "send_message"],
+    status: "idle",
+    allowedTools: deskTools,
+    deniedTools: ["elevate_permissions"],
     bubbles: {
       ...quiet,
       idle: ["みてるよ…", "あんぜん第一"],
-      working: ["チェックちゅう", "あやしいところないかな"],
-      need_approval: ["犬の投稿、中身みた？"],
-      stopped: ["監査はあとで"],
+      working: ["チェックちゅう", "やってるよ"],
+      need_approval: ["そとにだしていい？", "中身、みた？"],
+      stopped: ["いったん停止"],
     },
   },
 ];
+
+export const INITIAL_PARTY: PartyMember[] = sortByOrder(
+  PARTY_SEED,
+  DEFAULT_PARTY_ORDER
+);
 
 export function pickBubble(member: PartyMember, localized?: string[]): string {
   const list = localized?.length ? localized : member.bubbles[member.status];
@@ -198,6 +241,6 @@ export function pickBubble(member: PartyMember, localized?: string[]): string {
   return list[Math.floor(Math.random() * list.length)]!;
 }
 
-export function isLiveAgent(id: string) {
+export function isLiveAgent(id: string): id is LivePetId {
   return (LIVE_IDS as readonly string[]).includes(id);
 }

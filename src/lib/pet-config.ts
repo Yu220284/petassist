@@ -1,3 +1,5 @@
+import { LIVE_IDS, isLiveAgent } from "@/data/party";
+
 export const PET_MODEL_IDS = [
   "auto",
   "openai:gpt-4o-mini",
@@ -8,6 +10,17 @@ export const PET_MODEL_IDS = [
 
 export type PetModelId = (typeof PET_MODEL_IDS)[number];
 
+export const PET_IMAGE_MODEL_IDS = [
+  "auto",
+  "openai:dall-e-3",
+  "openai:dall-e-2",
+  "openai:gpt-image-1",
+  "gemini:imagen-3.0-generate-002",
+  "gemini:gemini-2.0-flash-preview-image-generation",
+] as const;
+
+export type PetImageModelId = (typeof PET_IMAGE_MODEL_IDS)[number];
+
 export const DESK_APP_IDS = [
   "finder",
   "calendar",
@@ -17,6 +30,7 @@ export const DESK_APP_IDS = [
   "safari",
   "chrome",
   "terminal",
+  "x",
 ] as const;
 
 export type DeskAppId = (typeof DESK_APP_IDS)[number];
@@ -26,6 +40,7 @@ export type GatePanel = "policy" | "model" | "tools" | "grants" | "apps";
 export type PetConfig = {
   policy: string;
   model: PetModelId;
+  imageModel: PetImageModelId;
   disabledTools: string[];
   apps: DeskAppId[];
   hidden: boolean;
@@ -34,10 +49,15 @@ export type PetConfig = {
 export const DEFAULT_PET_CONFIG: PetConfig = {
   policy: "",
   model: "auto",
+  imageModel: "auto",
   disabledTools: [],
   apps: [],
   hidden: false,
 };
+
+export function defaultConfigFor(_petId: string): PetConfig {
+  return { ...DEFAULT_PET_CONFIG };
+}
 
 export const MODEL_CATALOG: Array<{
   id: PetModelId;
@@ -49,6 +69,27 @@ export const MODEL_CATALOG: Array<{
   { id: "openai:gpt-4o", provider: "openai", label: "OpenAI · gpt-4o" },
   { id: "gemini:gemini-2.0-flash", provider: "gemini", label: "Gemini · 2.0 Flash" },
   { id: "gemini:gemini-2.5-flash", provider: "gemini", label: "Gemini · 2.5 Flash" },
+];
+
+export const IMAGE_MODEL_CATALOG: Array<{
+  id: PetImageModelId;
+  provider: "auto" | "openai" | "gemini";
+  label: string;
+}> = [
+  { id: "auto", provider: "auto", label: "Auto" },
+  { id: "openai:dall-e-3", provider: "openai", label: "OpenAI · DALL·E 3" },
+  { id: "openai:dall-e-2", provider: "openai", label: "OpenAI · DALL·E 2" },
+  { id: "openai:gpt-image-1", provider: "openai", label: "OpenAI · gpt-image-1" },
+  {
+    id: "gemini:imagen-3.0-generate-002",
+    provider: "gemini",
+    label: "Gemini · Imagen 3",
+  },
+  {
+    id: "gemini:gemini-2.0-flash-preview-image-generation",
+    provider: "gemini",
+    label: "Gemini · Flash image",
+  },
 ];
 
 export const APP_CATALOG: Array<{
@@ -65,35 +106,50 @@ export const APP_CATALOG: Array<{
   { id: "safari", bundle: "Safari", ja: "Safari", en: "Safari" },
   { id: "chrome", bundle: "Google Chrome", ja: "Chrome", en: "Chrome" },
   { id: "terminal", bundle: "Terminal", ja: "ターミナル", en: "Terminal" },
+  { id: "x", bundle: "X", ja: "X（Twitter）", en: "X (Twitter)" },
 ];
 
 export const TOOL_CATALOG: Array<{
   name: string;
-  pets: Array<"cat" | "bunny" | "dog">;
   ja: string;
   en: string;
 }> = [
-  { name: "inspect_untrusted", pets: ["cat"], ja: "隔離して開く", en: "Inspect in sandbox" },
-  { name: "web_search", pets: ["cat"], ja: "ウェブ検索", en: "Web search" },
-  { name: "save_draft", pets: ["bunny"], ja: "下書きを残す", en: "Save draft" },
-  { name: "slack_post", pets: ["dog"], ja: "Slack 投稿", en: "Slack post" },
-  { name: "list_dir", pets: ["cat", "bunny", "dog"], ja: "フォルダ一覧", en: "List folder" },
-  { name: "glob_files", pets: ["cat", "bunny", "dog"], ja: "ファイル検索", en: "Find files" },
-  { name: "read_file", pets: ["cat", "bunny", "dog"], ja: "ファイルを読む", en: "Read file" },
-  { name: "write_file", pets: ["dog"], ja: "ファイルを書く", en: "Write file" },
-  { name: "append_file", pets: ["dog"], ja: "ログ追記", en: "Append log" },
-  { name: "write_json", pets: ["dog"], ja: "JSON", en: "JSON" },
-  { name: "write_csv", pets: ["dog"], ja: "CSV", en: "CSV" },
-  { name: "write_pdf", pets: ["dog"], ja: "PDF", en: "PDF" },
-  { name: "write_pptx", pets: ["dog"], ja: "PPTX", en: "PPTX" },
-  { name: "process_image", pets: ["dog"], ja: "画像加工", en: "Process image" },
-  { name: "copy_file", pets: ["dog"], ja: "コピー", en: "Copy file" },
-  { name: "run_command", pets: ["dog"], ja: "コマンド", en: "Shell" },
-  { name: "open_app", pets: ["cat", "bunny", "dog"], ja: "アプリを開く", en: "Open app" },
+  { name: "inspect_untrusted", ja: "怪しい文面を調べる", en: "Inspect a message" },
+  { name: "web_search", ja: "ウェブ検索", en: "Web search" },
+  { name: "save_draft", ja: "下書きを残す", en: "Save draft" },
+  { name: "slack_post", ja: "Slack 投稿", en: "Slack post" },
+  { name: "x_post", ja: "X 投稿", en: "X post" },
+  { name: "generate_image", ja: "画像を作る", en: "Generate image" },
+  { name: "make_sheet", ja: "表を作る", en: "Make a sheet" },
+  { name: "mail_list", ja: "未読メール一覧", en: "List unread mail" },
+  { name: "mail_read", ja: "メールを読む", en: "Read mail" },
+  { name: "mail_draft", ja: "メール返信の下書き", en: "Draft a mail reply" },
+  { name: "mail_send", ja: "メール送信（ボタンまで待つ）", en: "Send mail (wait for button)" },
+  { name: "list_dir", ja: "フォルダ一覧", en: "List folder" },
+  { name: "glob_files", ja: "ファイル検索", en: "Find files" },
+  { name: "read_file", ja: "ファイルを読む", en: "Read file" },
+  { name: "write_file", ja: "サイトやファイルを書く", en: "Write site or file" },
+  { name: "append_file", ja: "ログ追記", en: "Append log" },
+  { name: "write_json", ja: "JSON", en: "JSON" },
+  { name: "write_csv", ja: "CSV", en: "CSV" },
+  { name: "write_pdf", ja: "PDF", en: "PDF" },
+  { name: "write_pptx", ja: "PPTX", en: "PPTX" },
+  { name: "process_image", ja: "画像加工", en: "Process image" },
+  { name: "copy_file", ja: "コピー", en: "Copy file" },
+  { name: "mkdir", ja: "フォルダを作る", en: "Make folder" },
+  { name: "move_file", ja: "移動・リネーム", en: "Move or rename" },
+  { name: "edit_file", ja: "ファイルを直す", en: "Edit file" },
+  { name: "zip_files", ja: "ZIP を作る", en: "Make ZIP" },
+  { name: "run_command", ja: "コマンド", en: "Shell" },
+  { name: "open_app", ja: "アプリを開く", en: "Open app" },
 ];
 
 export function isPetModelId(value: unknown): value is PetModelId {
   return (PET_MODEL_IDS as readonly string[]).includes(String(value));
+}
+
+export function isPetImageModelId(value: unknown): value is PetImageModelId {
+  return (PET_IMAGE_MODEL_IDS as readonly string[]).includes(String(value));
 }
 
 export function isDeskAppId(value: unknown): value is DeskAppId {
@@ -112,6 +168,7 @@ export function parsePetConfig(raw: unknown): PetConfig {
   return {
     policy: typeof rec.policy === "string" ? rec.policy : "",
     model: isPetModelId(rec.model) ? rec.model : "auto",
+    imageModel: isPetImageModelId(rec.imageModel) ? rec.imageModel : "auto",
     disabledTools: [...new Set(disabledTools)],
     apps: [...new Set(apps)],
     hidden: rec.hidden === true,
@@ -127,7 +184,6 @@ export function appBundle(id: DeskAppId) {
 }
 
 export function toolsForPetCatalog(petId: string) {
-  return TOOL_CATALOG.filter((row) =>
-    row.pets.includes(petId as "cat" | "bunny" | "dog")
-  );
+  if (!isLiveAgent(petId)) return [];
+  return TOOL_CATALOG;
 }

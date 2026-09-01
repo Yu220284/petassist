@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  DEFAULT_PET_CONFIG,
+  defaultConfigFor,
   parsePetConfig,
   type PetConfig,
 } from "@/lib/pet-config";
@@ -37,5 +37,5 @@ export function saveConfigs(map: ConfigMap) {
 }
 
 export function configFor(map: ConfigMap, petId: string): PetConfig {
-  return map[petId] ? parsePetConfig(map[petId]) : { ...DEFAULT_PET_CONFIG };
+  return map[petId] ? parsePetConfig(map[petId]) : defaultConfigFor(petId);
 }

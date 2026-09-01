@@ -41,9 +41,26 @@ export type DeskTalkOpenEvent = {
 export type DeskTalkReplyEvent = {
   type: "talk-reply";
   petId: string;
-  kind: "choice" | "message";
+  kind: "choice" | "message" | "draw";
   choiceId?: string;
   text?: string;
+};
+
+export type DeskTalkNewEvent = {
+  type: "talk-new";
+  petId: string;
+};
+
+export type DeskTalkSwitchEvent = {
+  type: "talk-switch";
+  petId: string;
+  roomId: string;
+};
+
+export type DeskPreviewEvent = {
+  type: "talk-preview";
+  petId?: string;
+  artifact: import("@/lib/agent/types").DeskArtifact;
 };
 
 export type DeskLocaleEvent = {
@@ -71,6 +88,9 @@ export type DeskEvent =
   | DeskTalkEvent
   | DeskTalkOpenEvent
   | DeskTalkReplyEvent
+  | DeskTalkNewEvent
+  | DeskTalkSwitchEvent
+  | DeskPreviewEvent
   | DeskLocaleEvent
   | DeskConfigEvent
   | DeskGrantsEvent;
@@ -123,6 +143,21 @@ export function publishDeskTalkReply(
   payload: Omit<DeskTalkReplyEvent, "type">
 ) {
   post({ type: "talk-reply", ...payload });
+}
+
+export function publishDeskTalkNew(petId: string) {
+  post({ type: "talk-new", petId });
+}
+
+export function publishDeskTalkSwitch(petId: string, roomId: string) {
+  post({ type: "talk-switch", petId, roomId });
+}
+
+export function publishDeskPreview(
+  artifact: import("@/lib/agent/types").DeskArtifact,
+  petId?: string
+) {
+  post({ type: "talk-preview", artifact, petId });
 }
 
 export function publishDeskLocale(locale: "ja" | "en") {
