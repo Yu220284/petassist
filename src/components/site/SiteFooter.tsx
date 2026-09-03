@@ -23,6 +23,9 @@ export function SiteFooter({ className }: { className?: string }) {
           <p className="mt-2 text-[11px]">{t.site.footer.credit}</p>
         </div>
         <nav className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium">
+          <Link href="/download" className="hover:text-[#f4c4d0]">
+            {t.site.nav.download}
+          </Link>
           <Link href="/desk" className="hover:text-[#f4c4d0]">
             {t.site.nav.desk}
           </Link>

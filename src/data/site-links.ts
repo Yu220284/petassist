@@ -44,6 +44,27 @@ export const SITE_LINKS: SiteLink[] = [
     ],
   },
   {
+    id: "download",
+    href: "/download",
+    category: "product",
+    title: { ja: "ダウンロード", en: "Download" },
+    blurb: {
+      ja: "Windows / Mac / Linux の ZIP を入れる。デスクに貼って、足りる分だけ任せる。",
+      en: "Get the Windows, Mac, or Linux ZIP. Stick it on the desk. Hand over only what’s needed.",
+    },
+    keywords: [
+      "download",
+      "windows",
+      "mac",
+      "linux",
+      "zip",
+      "app",
+      "ダウンロード",
+      "入れる",
+      "インストール",
+    ],
+  },
+  {
     id: "desk",
     href: "/desk",
     category: "product",

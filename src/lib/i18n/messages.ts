@@ -140,6 +140,7 @@ export type Messages = {
       party: string;
       links: string;
       desk: string;
+      download: string;
       faq: string;
     };
     search: {
@@ -158,6 +159,7 @@ export type Messages = {
       lead: string;
       permitHint: string;
       ctaDesk: string;
+      ctaDownload: string;
       ctaLinks: string;
       whyPets: string;
       trustScope: string;
@@ -227,6 +229,23 @@ export type Messages = {
       wait: string;
       title: string;
       lead: string;
+    };
+    download: {
+      kicker: string;
+      title: string;
+      lead: string;
+      windows: string;
+      windowsHint: string;
+      mac: string;
+      macHint: string;
+      linux: string;
+      linuxHint: string;
+      thisDevice: string;
+      cta: string;
+      soon: string;
+      note: string;
+      source: string;
+      releases: string;
     };
   };
   gate: {
@@ -509,6 +528,7 @@ export const ja: Messages = {
       party: "パーティ",
       links: "リンク",
       desk: "デスク",
+      download: "ダウンロード",
       faq: "よくある質問",
     },
     search: {
@@ -532,6 +552,7 @@ export const ja: Messages = {
       lead: "調べるだけ、下書きだけ、このフォルダだけ。どこまで許可しているかが一目でわかるから、余分に渡さなくても大丈夫。",
       permitHint: "デスクに置いて、タスクを管理する。",
       ctaDesk: "デスクを開く",
+      ctaDownload: "ダウンロード",
       ctaLinks: "リンクを探す",
       whyPets: "なぜペット？",
       trustScope: "先に範囲",
@@ -657,7 +678,7 @@ export const ja: Messages = {
         },
         {
           q: "どうやって始める？",
-          a: "デスクを開いて、ポケットからモニターに貼ります。仕事を書いて送ると、足りる範囲の子が出ます。",
+          a: "サイトから Windows / Mac / Linux の ZIP を入れるか、デスクを開きます。ポケットからモニターに貼って、仕事を書いて送ると、足りる範囲の子が出ます。",
         },
       ],
     },
@@ -688,6 +709,23 @@ export const ja: Messages = {
       wait: "まだ待ってる",
       title: "足りる分だけ渡して、デスクに貼る。",
       lead: "調べるだけ、下書きだけ、このフォルダだけ。仕事はデスクの見えやすいところに置いて管理する。足りる分だけ渡せばいい。",
+    },
+    download: {
+      kicker: "DOWNLOAD",
+      title: "ZIPを入れて、デスクに貼る。",
+      lead: "Windows、Mac、Linux それぞれ ZIP です。解凍して開くと、ポケットが立ち上がります。権限はこれまでどおり、足りる分だけ。",
+      windows: "Windows",
+      windowsHint: "ZIP を解凍して Petassist.exe を開きます。SmartScreen が出たら「詳細情報」から実行してください。",
+      mac: "Mac（Apple Silicon）",
+      macHint: "ZIP を解凍して Petassist.app を開きます。未署名なので、初回はコントロール＋クリックから「開く」。",
+      linux: "Linux",
+      linuxHint: "ZIP を解凍して実行ファイルを開きます。",
+      thisDevice: "このパソコン",
+      cta: "ZIPをダウンロード",
+      soon: "最新のファイルを準備しています。しばらくしたら GitHub Releases を見てください。",
+      note: "エージェントの仕事は、このパソコンの中で動きます。TrueForge を使う仕事は、これまでどおりローカルで起動してください。",
+      source: "ソースコードは",
+      releases: "すべてのリリース",
     },
   },
   gate: {
@@ -1052,6 +1090,7 @@ export const en: Messages = {
       party: "Party",
       links: "Links",
       desk: "Desk",
+      download: "Download",
       faq: "FAQ",
     },
     search: {
@@ -1075,6 +1114,7 @@ export const en: Messages = {
       lead: "Research only, drafts only, this folder only. You can see how far they’re allowed, so you don’t have to hand over extra.",
       permitHint: "On the desk, so you can manage the tasks.",
       ctaDesk: "Open the desk",
+      ctaDownload: "Download",
       ctaLinks: "Search links",
       whyPets: "Why pets?",
       trustScope: "Scope first",
@@ -1200,7 +1240,7 @@ export const en: Messages = {
         },
         {
           q: "How do I start?",
-          a: "Open the desk. Stick a pet from the pocket onto the monitor. Write the job and send it — the one with just enough permission goes.",
+          a: "Download the Windows, Mac, or Linux ZIP from this site, or open the desk. Stick a pet from the pocket onto the monitor. Write the job and send it — the one with just enough permission goes.",
         },
       ],
     },
@@ -1231,6 +1271,23 @@ export const en: Messages = {
       wait: "still waiting",
       title: "Hand over just enough. Stick it on the desk.",
       lead: "Research only. Drafts only. This folder only. Put the work on the desk so you can manage it. Hand over only what’s needed.",
+    },
+    download: {
+      kicker: "DOWNLOAD",
+      title: "Get the ZIP. Stick it on the desk.",
+      lead: "A ZIP for Windows, Mac, and Linux. Unzip, open the pocket, and pin pets on the monitor. Permissions stay just enough.",
+      windows: "Windows",
+      windowsHint: "Unzip and open Petassist.exe. If SmartScreen appears, choose More info, then Run anyway.",
+      mac: "Mac (Apple Silicon)",
+      macHint: "Unzip and open Petassist.app. Unsigned: first launch is Control-click, then Open.",
+      linux: "Linux",
+      linuxHint: "Unzip and run the executable.",
+      thisDevice: "This computer",
+      cta: "Download ZIP",
+      soon: "The latest file is still being prepared. Check GitHub Releases in a moment.",
+      note: "Agent work runs on this computer. Jobs that need TrueForge still start that harness locally.",
+      source: "Source is on",
+      releases: "All releases",
     },
   },
   gate: {

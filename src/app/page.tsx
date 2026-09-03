@@ -31,10 +31,12 @@ export default function Home() {
               name: "Petassist",
               alternateName: "ぺたしすと",
               applicationCategory: "DeveloperApplication",
-              operatingSystem: "macOS",
+              operatingSystem: ["Windows", "macOS", "Linux"],
               description:
                 "Stickable AI agents on the desk — so you can manage the work. Research only, drafts only, this folder only.",
               url: origin,
+              downloadUrl: `${origin}/download`,
+              installUrl: `${origin}/download`,
               codeRepository: GITHUB_REPO,
             },
             {

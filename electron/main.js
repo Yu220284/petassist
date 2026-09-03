@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, screen, dialog, Notification, session } = require("electron");
 const path = require("path");
+const { startPackagedDesk, stopPackagedDesk } = require("./packaged-desk");
 
 function originOf(raw) {
   try {
@@ -806,7 +807,16 @@ function allowDeskMedia() {
 app.whenReady().then(async () => {
   if (!gotLock) return;
   allowDeskMedia();
-  await waitForDesk();
+  if (app.isPackaged) {
+    const origin = startPackagedDesk();
+    if (origin) {
+      BASE = origin;
+      process.env.PETASSIST_URL = origin;
+      await waitForDesk(origin, 45000);
+    }
+  } else {
+    await waitForDesk();
+  }
   createMainWindow();
   app.on("activate", () => {
     createMainWindow();
@@ -815,6 +825,7 @@ app.whenReady().then(async () => {
 
 app.on("before-quit", () => {
   isQuitting = true;
+  stopPackagedDesk();
   closeStickies();
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.destroy();

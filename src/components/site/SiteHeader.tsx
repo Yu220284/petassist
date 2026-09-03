@@ -11,6 +11,7 @@ const NAV = [
   { href: "/#features", key: "features" as const },
   { href: "/#uses", key: "uses" as const },
   { href: "/#party", key: "party" as const },
+  { href: "/download", key: "download" as const },
   { href: "/links", key: "links" as const },
   { href: "/#faq", key: "faq" as const },
 ];
@@ -31,23 +32,23 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#302c55]/10 bg-[#eef3f9]/92 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
+      <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 sm:gap-3">
         <Link href="/" className="min-w-0 shrink-0" onClick={() => setOpen(false)}>
-          <p className="text-[10px] font-semibold tracking-[0.18em] text-[#e56b8c]">
+          <p className="whitespace-nowrap text-[10px] font-semibold tracking-[0.18em] text-[#e56b8c]">
             {t.brand.kicker}
           </p>
-          <p className="text-base font-bold leading-tight text-[#302c55]">
+          <p className="whitespace-nowrap text-base font-bold leading-tight text-[#302c55]">
             {t.brand.title}
           </p>
         </Link>
 
-        <nav className="ml-4 hidden items-center gap-1 md:flex">
+        <nav className="ml-2 hidden min-w-0 items-center lg:ml-4 lg:flex">
           {NAV.map((item) => (
             <Link
               key={item.key}
               href={item.href}
               className={cn(
-                "rounded-full px-3 py-1.5 text-[12px] font-medium text-[#6d7a93] hover:bg-white/80 hover:text-[#302c55]",
+                "shrink-0 whitespace-nowrap rounded-full px-2 py-1.5 text-[12px] font-medium text-[#6d7a93] hover:bg-white/80 hover:text-[#302c55] xl:px-3",
                 pathname === item.href && "bg-white text-[#302c55]"
               )}
             >
@@ -61,7 +62,7 @@ export function SiteHeader() {
           method="get"
           role="search"
           onSubmit={onSearch}
-          className="ml-auto hidden min-w-0 max-w-xs flex-1 lg:block"
+          className="ml-auto hidden min-w-0 max-w-[13rem] flex-1 xl:block"
         >
           <label className="sr-only" htmlFor="header-link-search">
             {t.site.search.label}
@@ -77,17 +78,23 @@ export function SiteHeader() {
           />
         </form>
 
-        <div className="ml-auto flex items-center gap-2 md:ml-0">
+        <div className="ml-auto flex shrink-0 items-center gap-2 lg:ml-0">
           <LocaleToggle />
           <Link
+            href="/download"
+            className="hidden whitespace-nowrap rounded-full bg-[#302c55] px-3 py-1.5 text-[12px] font-semibold text-white shadow-[3px_3px_0_#e56b8c] sm:inline-flex"
+          >
+            {t.site.nav.download}
+          </Link>
+          <Link
             href="/desk"
-            className="hidden rounded-full bg-[#302c55] px-3 py-1.5 text-[12px] font-semibold text-white shadow-[3px_3px_0_#e56b8c] sm:inline-flex"
+            className="hidden whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-semibold text-[#302c55] hover:bg-white/80 sm:inline-flex"
           >
             {t.site.nav.desk}
           </Link>
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[#302c55] hover:bg-slate-100 md:hidden"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[#302c55] hover:bg-slate-100 lg:hidden"
             aria-expanded={open}
             aria-controls="site-mobile-nav"
             onClick={() => setOpen((v) => !v)}
@@ -120,7 +127,7 @@ export function SiteHeader() {
       {open ? (
         <div
           id="site-mobile-nav"
-          className="border-t border-[#302c55]/10 bg-[#eef3f9] px-4 py-3 md:hidden"
+          className="border-t border-[#302c55]/10 bg-[#eef3f9] px-4 py-3 lg:hidden"
         >
           <form action="/links" method="get" role="search" onSubmit={onSearch}>
             <input
@@ -143,6 +150,13 @@ export function SiteHeader() {
                 {t.site.nav[item.key]}
               </Link>
             ))}
+            <Link
+              href="/download"
+              className="rounded-xl px-3 py-2 text-sm font-semibold text-[hsl(var(--primary))]"
+              onClick={() => setOpen(false)}
+            >
+              {t.site.nav.download}
+            </Link>
             <Link
               href="/desk"
               className="rounded-xl px-3 py-2 text-sm font-semibold text-[hsl(var(--primary))]"

@@ -8,7 +8,7 @@ export function LocaleToggle({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "inline-flex rounded-full border border-slate-200 bg-slate-50 p-0.5 text-[11px] font-semibold",
+        "inline-flex shrink-0 whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 p-0.5 text-[11px] font-semibold",
         className
       )}
       role="group"

@@ -7,7 +7,6 @@ import { SiteSearch } from "@/components/site/SiteSearch";
 import { Button } from "@/components/ui/button";
 import { INITIAL_PARTY } from "@/data/party";
 import { useI18n } from "@/lib/i18n/locale";
-import { GITHUB_REPO } from "@/lib/site-url";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -41,7 +40,7 @@ export function LandingPage() {
                 {t.site.hero.badge}
               </motion.p>
               <motion.h1
-                className="site-display mt-3 max-w-xl"
+                className="site-display mt-3"
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.06 }}
@@ -49,7 +48,7 @@ export function LandingPage() {
                 {t.site.hero.title}
               </motion.h1>
               <motion.p
-                className="mt-5 max-w-xl text-sm leading-relaxed text-[#5a6478] sm:text-base"
+                className="mt-5 max-w-xl text-sm leading-[1.75] text-[#5a6478] sm:text-[0.95rem] sm:leading-[1.8]"
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.12 }}
@@ -63,14 +62,17 @@ export function LandingPage() {
                 transition={{ delay: 0.18 }}
               >
                 <Button asChild size="lg" className="site-cta">
-                  <a href="#desk">{t.site.hero.ctaDesk}</a>
+                  <Link href="/download">{t.site.hero.ctaDownload}</Link>
                 </Button>
+                <a href="#desk" className="site-text-link">
+                  {t.site.hero.ctaDesk}
+                </a>
                 <Link href="#problems" className="site-text-link">
                   {t.site.hero.whyPets} ↓
                 </Link>
               </motion.div>
               <motion.p
-                className="mt-10 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-[#6d7a93]"
+                className="mt-10 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold leading-none text-[#6d7a93]"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.34 }}
@@ -116,7 +118,7 @@ export function LandingPage() {
                 </article>
               ))}
             </div>
-            <p className="mt-16 ml-auto max-w-xl text-sm leading-relaxed text-[#5a6478] sm:text-base">
+            <p className="mt-16 ml-auto max-w-xl text-sm leading-[1.75] text-[#5a6478] sm:text-[0.95rem]">
               {t.site.features.desc}
             </p>
           </div>
@@ -134,7 +136,7 @@ export function LandingPage() {
                 <p className="site-eyebrow">{t.site.party.label}</p>
                 <h2 className="site-display-md mt-2">{t.site.party.title}</h2>
               </div>
-              <p className="max-w-md text-sm leading-relaxed text-[#5a6478]">
+              <p className="max-w-md text-sm leading-[1.75] text-[#5a6478]">
                 {t.site.party.hint}
               </p>
             </div>
@@ -156,7 +158,7 @@ export function LandingPage() {
                         <p className="site-eyebrow !mb-0">
                           0{i + 1} / {copy?.name ?? pet.nameJa}
                         </p>
-                        <h3 className="mt-1 text-xl font-bold tracking-tight text-[#302c55]">
+                        <h3 className="mt-1 text-[1.05rem] font-bold leading-snug tracking-tight text-[#302c55] [text-wrap:balance]">
                           {use.title}
                         </h3>
                       </div>
@@ -192,10 +194,12 @@ export function LandingPage() {
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <div>
-                      <h3 className="text-lg font-bold tracking-tight text-[#302c55]">
+                      <h3 className="text-[1.05rem] font-bold leading-snug tracking-tight text-[#302c55] [text-wrap:balance]">
                         {item.title}
                       </h3>
-                      <p className="mt-1 text-sm text-[#5a6478]">{item.text}</p>
+                      <p className="mt-1 text-sm leading-[1.7] text-[#5a6478]">
+                        {item.text}
+                      </p>
                     </div>
                   </li>
                 ))}
@@ -259,16 +263,14 @@ export function LandingPage() {
             <p>{t.site.closing.lead}</p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Button asChild size="lg" className="site-cta site-cta-on-ink">
-                <Link href="/desk">{t.site.hero.ctaDesk}</Link>
+                <Link href="/download">{t.site.hero.ctaDownload}</Link>
               </Button>
-              <a
-                href={GITHUB_REPO}
+              <Link
+                href="/desk"
                 className="site-text-link !text-white !border-white/70"
-                target="_blank"
-                rel="noreferrer"
               >
-                {t.site.footer.github} ↗
-              </a>
+                {t.site.hero.ctaDesk}
+              </Link>
             </div>
           </div>
         </section>
@@ -296,10 +298,10 @@ export function LandingPage() {
                   key={item.q}
                   className="rounded-2xl bg-white/80 px-4 py-3 shadow-sm open:pb-4"
                 >
-                  <summary className="cursor-pointer list-none text-sm font-semibold text-[#302c55] [&::-webkit-details-marker]:hidden">
+                  <summary className="cursor-pointer list-none text-sm font-semibold leading-snug text-[#302c55] [text-wrap:pretty] [&::-webkit-details-marker]:hidden">
                     {item.q}
                   </summary>
-                  <p className="mt-2 text-sm leading-relaxed text-[#5a6478]">
+                  <p className="mt-2 text-sm leading-[1.75] text-[#5a6478]">
                     {item.a}
                   </p>
                 </details>
