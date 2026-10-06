@@ -37,10 +37,14 @@ export type DeskAppId = (typeof DESK_APP_IDS)[number];
 
 export type GatePanel = "policy" | "model" | "tools" | "grants" | "apps";
 
+export const WORK_MODE_IDS = ["agent", "plan", "ask", "image"] as const;
+export type WorkMode = (typeof WORK_MODE_IDS)[number];
+
 export type PetConfig = {
   policy: string;
   model: PetModelId;
   imageModel: PetImageModelId;
+  workMode: WorkMode;
   disabledTools: string[];
   apps: DeskAppId[];
   hidden: boolean;
@@ -50,6 +54,7 @@ export const DEFAULT_PET_CONFIG: PetConfig = {
   policy: "",
   model: "auto",
   imageModel: "auto",
+  workMode: "agent",
   disabledTools: [],
   apps: [],
   hidden: false,
@@ -156,6 +161,36 @@ export function isDeskAppId(value: unknown): value is DeskAppId {
   return (DESK_APP_IDS as readonly string[]).includes(String(value));
 }
 
+export function isWorkMode(value: unknown): value is WorkMode {
+  return (WORK_MODE_IDS as readonly string[]).includes(String(value));
+}
+
+/** Tools the model may call in Plan / Ask. Agent keeps the full catalog. */
+export function toolsAllowedInWorkMode(mode: WorkMode): Set<string> | null {
+  if (mode === "plan") {
+    return new Set([
+      "inspect_untrusted",
+      "web_search",
+      "list_dir",
+      "glob_files",
+      "read_file",
+      "mail_list",
+      "mail_read",
+    ]);
+  }
+  if (mode === "ask") {
+    return new Set([
+      "web_search",
+      "inspect_untrusted",
+      "list_dir",
+      "glob_files",
+      "read_file",
+    ]);
+  }
+  if (mode === "image") return new Set(["generate_image"]);
+  return null;
+}
+
 export function parsePetConfig(raw: unknown): PetConfig {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_PET_CONFIG };
   const rec = raw as Record<string, unknown>;
@@ -169,6 +204,7 @@ export function parsePetConfig(raw: unknown): PetConfig {
     policy: typeof rec.policy === "string" ? rec.policy : "",
     model: isPetModelId(rec.model) ? rec.model : "auto",
     imageModel: isPetImageModelId(rec.imageModel) ? rec.imageModel : "auto",
+    workMode: isWorkMode(rec.workMode) ? rec.workMode : "agent",
     disabledTools: [...new Set(disabledTools)],
     apps: [...new Set(apps)],
     hidden: rec.hidden === true,

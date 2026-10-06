@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Petassist Pocket",
     statusBarStyle: "default",
   },
-  icons: { apple: "/party/cat/02.png" },
+  icons: { apple: "/party/cat/02.webp" },
 };
 
 export const viewport: Viewport = {

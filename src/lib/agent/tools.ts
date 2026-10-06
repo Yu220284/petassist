@@ -5,6 +5,7 @@ import {
   DEFAULT_PET_CONFIG,
   DESK_APP_IDS,
   isDeskAppId,
+  toolsAllowedInWorkMode,
   type PetConfig,
 } from "@/lib/pet-config";
 import { openMacApp, openXCompose } from "./gateway";
@@ -625,9 +626,15 @@ function filterTools<T extends { function: { name: string } }>(
   tools: T[],
   config: PetConfig
 ) {
-  if (!config.disabledTools.length) return tools;
   const blocked = new Set(config.disabledTools);
-  return tools.filter((tool) => !blocked.has(tool.function.name));
+  const allowed = toolsAllowedInWorkMode(config.workMode);
+  if (!blocked.size && !allowed) return tools;
+  return tools.filter((tool) => {
+    const name = tool.function.name;
+    if (blocked.has(name)) return false;
+    if (allowed && !allowed.has(name)) return false;
+    return true;
+  });
 }
 
 export async function executeTool(
@@ -651,6 +658,18 @@ export async function executeTool(
         ? `道具 ${name} はこの子には渡していません（MCP Gateway）`
         : `Tool ${name} is disabled for this pet (MCP Gateway)`;
     return JSON.stringify({ error: msg });
+  }
+  const allowed = toolsAllowedInWorkMode(config.workMode);
+  if (allowed && !allowed.has(name)) {
+    const msg =
+      locale === "ja"
+        ? config.workMode === "plan"
+          ? "いまはプランモード。実行はしないよ。手順だけ書くね。"
+          : "いまはアスクモード。答えるだけだよ。"
+        : config.workMode === "plan"
+          ? "Plan mode — I'll outline steps, not run tools that change things."
+          : "Ask mode — I'll answer, not act.";
+    return JSON.stringify({ error: msg, mode: config.workMode });
   }
   if (name === "inspect_untrusted") {
     return inspectUntrusted({

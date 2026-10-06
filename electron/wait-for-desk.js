@@ -3,11 +3,23 @@ const http = require("http");
 function check(port) {
   return new Promise((resolve) => {
     const req = http.get(
-      { host: "127.0.0.1", port, path: "/desk", timeout: 800 },
+      { host: "127.0.0.1", port, path: "/api/companion/status", timeout: 800 },
       (res) => {
-        const ok = Boolean(res.statusCode && res.statusCode < 500);
-        res.resume();
-        resolve(ok);
+        if (res.statusCode !== 200) {
+          res.resume();
+          resolve(false);
+          return;
+        }
+        const chunks = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => {
+          try {
+            const data = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+            resolve(Array.isArray(data?.pets));
+          } catch {
+            resolve(false);
+          }
+        });
       }
     );
     req.on("error", () => resolve(false));

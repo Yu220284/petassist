@@ -16,7 +16,8 @@ import {
   subscribeDesk,
 } from "@/lib/desk-channel";
 
-const STORAGE_KEY = "pockassist.locale";
+const STORAGE_KEY = "petassist.locale";
+const LEGACY_STORAGE_KEY = "pockassist.locale";
 
 type LocaleContextValue = {
   locale: Locale;
@@ -29,8 +30,13 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
 function detectLocale(): Locale {
   if (typeof window === "undefined") return "en";
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (isLocale(stored)) return stored;
+    const stored =
+      window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (isLocale(stored)) {
+      if (stored) window.localStorage.setItem(STORAGE_KEY, stored);
+      return stored;
+    }
   } catch {
     /* ignore */
   }

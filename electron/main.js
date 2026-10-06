@@ -27,10 +27,12 @@ let BASE = deskBase();
 
 async function originAlive(origin) {
   try {
-    const res = await fetch(`${origin}/desk`, {
+    const res = await fetch(`${origin}/api/companion/status`, {
       signal: AbortSignal.timeout(800),
     });
-    return res.ok || (res.status >= 200 && res.status < 500);
+    if (!res.ok) return false;
+    const data = await res.json();
+    return Array.isArray(data?.pets);
   } catch {
     return false;
   }
@@ -43,8 +45,10 @@ async function resolveDeskBase(preferred) {
     BASE,
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
     "http://localhost:3000",
     "http://localhost:3001",
+    "http://localhost:3002",
   ]
     .map((raw) => (raw ? originOf(raw) : null))
     .filter(Boolean);
@@ -224,10 +228,11 @@ function snapIfNearTop(point, display) {
 /** @type {{ win: import("electron").BrowserWindow, offset: { x: number, y: number }, passClicks: boolean } | null} */
 let track = null;
 let trackTimer = null;
+const FRAME_MS = 16;
 
 function stopTrack() {
   if (trackTimer != null) {
-    cancelAnimationFrame(trackTimer);
+    clearTimeout(trackTimer);
     trackTimer = null;
   }
   if (track?.win && !track.win.isDestroyed() && track.passClicks) {
@@ -240,17 +245,29 @@ function stopTrack() {
   track = null;
 }
 
+function asInt(n, fallback = 0) {
+  const v = Math.round(Number(n));
+  return Number.isFinite(v) ? v : fallback;
+}
+
 function applyTrack() {
   if (!track || track.win.isDestroyed()) {
     stopTrack();
     return;
   }
   const p = cursorPoint();
-  track.win.setPosition(
-    Math.round(p.x - track.offset.x),
-    Math.round(p.y - track.offset.y),
-    false
-  );
+  const x = asInt(p?.x - track.offset.x);
+  const y = asInt(p?.y - track.offset.y);
+  if (!Number.isInteger(x) || !Number.isInteger(y)) return;
+  if (track.lastX === x && track.lastY === y) return;
+  try {
+    track.win.setPosition(x, y, false);
+    track.lastX = x;
+    track.lastY = y;
+  } catch (err) {
+    console.warn("[petassist] applyTrack setPosition failed", { x, y }, err);
+    stopTrack();
+  }
 }
 
 function startTrack(win, offset, passClicks = false) {
@@ -263,13 +280,23 @@ function startTrack(win, offset, passClicks = false) {
       /* ignore */
     }
   }
-  track = { win, offset, passClicks };
+  track = {
+    win,
+    offset: {
+      x: Number(offset?.x) || 0,
+      y: Number(offset?.y) || 0,
+    },
+    passClicks,
+    lastX: null,
+    lastY: null,
+  };
   applyTrack();
+  // Main-process loop only — renderer dragMove must not also fight setPosition.
   const tick = () => {
     applyTrack();
-    if (track) trackTimer = requestAnimationFrame(tick);
+    if (track) trackTimer = setTimeout(tick, FRAME_MS);
   };
-  trackTimer = requestAnimationFrame(tick);
+  trackTimer = setTimeout(tick, FRAME_MS);
 }
 
 /** @type {Set<string>} */
@@ -285,6 +312,22 @@ function broadcastPinned() {
   }
 }
 
+/** Bake.Ch-style: only one sticky avatar on the desk at a time. */
+function closeOtherStickies(keepId) {
+  for (const [id, win] of [...stickies.entries()]) {
+    if (id === keepId) continue;
+    hiddenStickies.delete(id);
+    if (win && !win.isDestroyed()) {
+      try {
+        win.destroy();
+      } catch {
+        /* ignore */
+      }
+    }
+    stickies.delete(id);
+  }
+}
+
 function placeSticky(id, x, y, { clamp = true, immediate = false } = {}) {
   const display = screen.getDisplayNearestPoint({ x, y });
   const pos = clamp
@@ -293,11 +336,14 @@ function placeSticky(id, x, y, { clamp = true, immediate = false } = {}) {
   const existing = stickies.get(id);
 
   if (existing && !existing.isDestroyed()) {
+    closeOtherStickies(id);
     existing.setPosition(pos.x, pos.y, false);
     existing.show();
     hiddenStickies.delete(id);
     return existing;
   }
+
+  closeOtherStickies(id);
 
   const win = new BrowserWindow({
     width: STICKY_W,
@@ -390,27 +436,16 @@ function pinAtCursor(id, { snap = true } = {}) {
 }
 
 function pinAllTop(ids) {
+  // One avatar only (Bake.Ch style). Species / coat stay as optional looks.
   const known = new Set(PARTY_ORDER);
-  const order = [];
-  const seen = new Set();
-  const incoming = Array.isArray(ids) ? ids : PARTY_ORDER;
-  for (const id of incoming) {
-    if (typeof id !== "string" || !known.has(id) || seen.has(id)) continue;
-    seen.add(id);
-    order.push(id);
-  }
-  for (const id of PARTY_ORDER) {
-    if (!seen.has(id)) order.push(id);
-  }
+  const incoming = Array.isArray(ids) && ids.length > 0 ? ids : PARTY_ORDER;
+  const id =
+    incoming.find((row) => typeof row === "string" && known.has(row)) ??
+    PARTY_ORDER[0];
   const area = screen.getPrimaryDisplay().bounds;
-  const gap = 6;
-  const total = order.length * STICKY_W + (order.length - 1) * gap;
-  let x = area.x + Math.max(12, Math.round((area.width - total) / 2));
+  const x = area.x + Math.max(12, Math.round((area.width - STICKY_W) / 2));
   const y = area.y;
-  for (const id of order) {
-    placeSticky(id, x, y);
-    x += STICKY_W + gap;
-  }
+  placeSticky(id, x, y);
   broadcastPinned();
 }
 
@@ -485,9 +520,9 @@ function animateLeap(win, x0, y0, x1, y1, done) {
       done();
       return;
     }
-    requestAnimationFrame(tick);
+    setTimeout(tick, FRAME_MS);
   };
-  requestAnimationFrame(tick);
+  setTimeout(tick, FRAME_MS);
 }
 
 function shrinkForLeap(win) {
@@ -621,25 +656,7 @@ ipcMain.handle("pet:pinned", () => ({
   hidden: [...hiddenStickies],
 }));
 
-ipcMain.handle("pet:pin-all-top", async (event, payload = {}) => {
-  const confirm = payload?.confirm !== false;
-  if (confirm) {
-    const parent = BrowserWindow.fromWebContents(event.sender);
-    const ja = !app.getLocale().startsWith("en");
-    const { response } = await dialog.showMessageBox(parent ?? undefined, {
-      type: "info",
-      buttons: ja ? ["続ける", "やめる"] : ["Continue", "Cancel"],
-      defaultId: 0,
-      cancelId: 1,
-      message: ja ? "ちょっと重くなるかも" : "This might get heavy",
-      detail: ja
-        ? "6匹を一度にモニターへ貼ります。窓が多いと、動きが遅くなることがあります。"
-        : "All six will stick to the monitor at once. Lots of windows can slow this Mac down.",
-    });
-    if (response !== 0) {
-      return { pinned: [...stickies.keys()], hidden: [...hiddenStickies] };
-    }
-  }
+ipcMain.handle("pet:pin-all-top", async (_event, payload = {}) => {
   pinAllTop(payload?.ids);
   return { pinned: [...stickies.keys()], hidden: [...hiddenStickies] };
 });
@@ -818,6 +835,11 @@ app.whenReady().then(async () => {
     await waitForDesk();
   }
   createMainWindow();
+  // One desk avatar by default (Bake.Ch style) — not the old six.
+  const starter = PARTY_ORDER[0];
+  const pos = defaultPinPos(starter);
+  placeSticky(starter, pos.x, pos.y);
+  broadcastPinned();
   app.on("activate", () => {
     createMainWindow();
   });

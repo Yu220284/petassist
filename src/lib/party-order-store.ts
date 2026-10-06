@@ -1,8 +1,10 @@
 "use client";
 
 import { DEFAULT_PARTY_ORDER, sortByOrder } from "@/data/party";
+import { readStorage, writeStorage } from "@/lib/storage-key";
 
-const KEY = "pockassist.party-order.v1";
+const KEY = "petassist.party-order.v1";
+const LEGACY_KEY = "pockassist.party-order.v1";
 
 function knownIds(): string[] {
   return [...DEFAULT_PARTY_ORDER];
@@ -12,7 +14,7 @@ export function loadPartyOrder(): string[] {
   const fallback = knownIds();
   if (typeof window === "undefined") return fallback;
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = readStorage(KEY, [LEGACY_KEY]);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return fallback;
@@ -36,7 +38,7 @@ export function loadPartyOrder(): string[] {
 export function savePartyOrder(ids: string[]) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(ids));
+    writeStorage(KEY, JSON.stringify(ids));
   } catch {
     /* ignore */
   }
@@ -61,7 +63,8 @@ export function applyPartyOrder<T extends { id: string }>(
   return sortByOrder(party, order);
 }
 
-export const ACTIVE_SOFT_LIMIT = 3;
+/** Bake.Ch style: one live desk avatar at a time. */
+export const ACTIVE_SOFT_LIMIT = 1;
 
 export function isActiveStatus(status: string) {
   return status !== "stopped" && status !== "empty";

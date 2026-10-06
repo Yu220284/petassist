@@ -56,8 +56,9 @@ export function useTypewriter(
         return;
       }
       last = now;
-      i += 1;
-      setN(i);
+      const behind = chars.length - i;
+      i += behind > 12 ? Math.max(2, Math.ceil(behind / 4)) : 1;
+      setN(Math.min(i, chars.length));
       if (i >= chars.length) return;
       timer.current = window.requestAnimationFrame(tick);
     };

@@ -286,7 +286,7 @@ export function beginLeap(input: {
   else {
     s.pets.set(input.id, {
       id: input.id,
-      icon: `/party/${input.id}/02.png`,
+      icon: `/party/${input.id}/02.webp`,
       accent: "#94a3b8",
       status: "idle",
       location: "transit",
@@ -318,7 +318,7 @@ export function markArrived(id: string, location: CompanionLocation) {
   else {
     s.pets.set(id, {
       id,
-      icon: `/party/${id}/02.png`,
+      icon: `/party/${id}/02.webp`,
       accent: "#94a3b8",
       status: "idle",
       location,

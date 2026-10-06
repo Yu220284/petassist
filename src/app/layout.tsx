@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Petassist" }],
   icons: {
-    icon: "/party/cat/02.png",
-    shortcut: "/party/cat/02.png",
-    apple: "/party/cat/02.png",
+    icon: "/party/cat/02.webp",
+    shortcut: "/party/cat/02.webp",
+    apple: "/party/cat/02.webp",
   },
   openGraph: {
     type: "website",

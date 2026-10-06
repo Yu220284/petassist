@@ -20,7 +20,7 @@ export function openPreview(
   if ("headers" in artifact && artifact.kind === "sheet") {
     try {
       window.localStorage.setItem(
-        `pockassist.preview.${artifact.id}`,
+        `petassist.preview.${artifact.id}`,
         JSON.stringify({
           title: artifact.title,
           headers: artifact.headers,

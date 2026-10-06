@@ -8,8 +8,9 @@ Petassist gives AI agents only the minimum permissions they need, then pins them
 
 ## Desk
 
-1. `npm run electron` opens the pocket window.
-2. Drag an animal onto the monitor, click it, and chat a job — or assign work from the dock.
+1. `npm run electron` opens the pocket window and one desk avatar (Bake.Ch style — only one moves at a time).
+2. Click the avatar to chat a job — or assign work from the dock.
+3. Species and coat are optional looks; swapping them replaces the single sticky.
 
 For example:
 
@@ -17,7 +18,7 @@ For example:
 2. **Bunny (L2)** — Drafts. No write MCP.
 3. **Dog (L3)** — Calls a write MCP (Slack, etc.) and stops for harness tool approval. Nothing leaves until you Allow.
 
-Run up to 3 at once. Save up to 6 agents.
+One avatar on the desk at a time. Obake / Bake.Ch ghost is not part of this roster.
 
 ## Setup
 

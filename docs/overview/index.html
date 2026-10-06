@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1920" />
+    <title>Petassist 概要</title>
+    <style>
+      :root {
+        --ink: #302c55;
+        --muted: #6b6484;
+        --pink: #e56b8c;
+        --paper: #f3f0fa;
+        --sky: #e8eef8;
+        --card: #ffffff;
+        --line: rgba(48, 44, 85, 0.08);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      html {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      body {
+        font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+        color: var(--ink);
+        background: #d9dce8;
+      }
+
+      @page {
+        size: 1920px 1080px;
+        margin: 0;
+      }
+
+      .slide {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background:
+          radial-gradient(900px 520px at 110% -10%, rgba(229, 107, 140, 0.16), transparent 60%),
+          radial-gradient(700px 480px at -8% 110%, rgba(123, 145, 214, 0.16), transparent 58%),
+          linear-gradient(165deg, #f7f4fc 0%, var(--sky) 52%, #f8eef3 100%);
+        page-break-after: always;
+        break-after: page;
+      }
+      .slide:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .pad {
+        position: relative;
+        z-index: 1;
+        height: 100%;
+        padding: 44px 64px 56px;
+      }
+
+      .kicker {
+        margin: 0 0 12px;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        color: var(--pink);
+      }
+      h1 {
+        margin: 0;
+        font-size: 48px;
+        font-weight: 700;
+        line-height: 1.28;
+        letter-spacing: 0.01em;
+      }
+      .lead {
+        margin: 14px 0 0;
+        font-size: 24px;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+      .muted { color: var(--muted); }
+
+      .footer {
+        position: absolute;
+        z-index: 5;
+        right: 64px;
+        bottom: 22px;
+        left: 64px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 16px;
+        letter-spacing: 0.08em;
+        color: #5a5472;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: 0 18px 40px rgba(48, 44, 85, 0.07);
+      }
+
+      img { display: block; max-width: 100%; }
+
+      /* 1 cover */
+      .cover {
+        display: grid;
+        grid-template-columns: 0.82fr 1.18fr;
+        gap: 40px;
+        align-items: stretch;
+        height: calc(100% - 28px);
+      }
+      .cover > div:first-child {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .cover h1 { font-size: 68px; line-height: 1.18; }
+      .cover .lead { font-size: 26px; max-width: 18em; margin-top: 20px; }
+      .hero {
+        overflow: hidden;
+        height: auto;
+        min-height: 0;
+        padding: 0;
+      }
+      .hero img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 52% 42%;
+      }
+
+      /* 2 problem */
+      .cols-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-top: 28px;
+      }
+      .problem-card {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: 760px;
+      }
+      .problem-card .art {
+        flex: 1;
+        min-height: 460px;
+        background: #efeaf6;
+      }
+      .problem-card .art img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .problem-card .body { padding: 26px 28px 30px; }
+      .problem-card h2 {
+        margin: 0 0 12px;
+        font-size: 28px;
+        line-height: 1.35;
+      }
+      .problem-card p {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.65;
+        color: var(--muted);
+      }
+
+      /* 3 solution */
+      .solution-list {
+        display: grid;
+        gap: 18px;
+        margin-top: 22px;
+      }
+      .solution-row {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 36px;
+        align-items: center;
+        padding: 18px 32px 18px 18px;
+        min-height: 236px;
+      }
+      .solution-row .art {
+        width: 260px;
+        height: 200px;
+        overflow: hidden;
+        border-radius: 22px;
+        background: #f4f1fb;
+      }
+      .solution-row .art img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .solution-row h2 {
+        margin: 0 0 10px;
+        font-size: 32px;
+      }
+      .solution-row p {
+        margin: 0;
+        font-size: 22px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+
+      /* 4 use */
+      .use-card {
+        display: flex;
+        flex-direction: column;
+        padding: 22px 28px 28px;
+        text-align: center;
+        height: 740px;
+      }
+      .halo {
+        display: grid;
+        place-items: center;
+        height: 320px;
+        margin-bottom: 8px;
+      }
+      .halo img {
+        max-width: 280px;
+        max-height: 280px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+      }
+      .who {
+        margin: 0 0 10px;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: var(--pink);
+        text-align: center;
+      }
+      .use-card h2 {
+        margin: 0 0 14px;
+        font-size: 34px;
+      }
+      .use-card .blurb {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.65;
+        color: var(--muted);
+        text-align: left;
+      }
+
+      /* 5 architecture */
+      .stack { display: grid; gap: 16px; margin-top: 28px; }
+      .layer {
+        padding: 26px 32px 28px;
+      }
+      .layer-name {
+        display: block;
+        margin: 0 0 18px;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        color: var(--pink);
+      }
+      .brands {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 24px 36px;
+      }
+      .brand {
+        display: grid;
+        justify-items: center;
+        gap: 10px;
+        min-width: 96px;
+      }
+      .brand img {
+        width: auto;
+        height: 64px;
+        max-width: 160px;
+        object-fit: contain;
+      }
+      .brand img.wide {
+        height: 42px;
+        max-width: 220px;
+      }
+      .brand span {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: 0.02em;
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 18px;
+      }
+      .arrow {
+        text-align: center;
+        color: var(--pink);
+        font-size: 20px;
+        line-height: 1;
+        margin: -2px 0;
+      }
+
+      @media screen {
+        body { padding: 32px 0 64px; }
+        .slide {
+          margin: 0 auto 32px;
+          border-radius: 8px;
+          box-shadow: 0 24px 80px rgba(48, 44, 85, 0.16);
+        }
+      }
+      @media print {
+        body { background: #fff; }
+        .slide { box-shadow: none; border-radius: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="slide">
+      <div class="pad">
+        <div class="cover">
+          <div>
+            <p class="kicker">「貼れる」AIエージェント</p>
+            <h1>デスクにぺたっと<br />Petassist</h1>
+            <p class="lead">大人も子どもも。安心して使えるAIエージェント</p>
+          </div>
+          <div class="card hero">
+            <img src="cover-desk.webp" alt="デスクに貼ったPetassist" />
+          </div>
+        </div>
+      </div>
+      <div class="footer"><span>Petassist</span><span>01</span></div>
+    </section>
+
+    <section class="slide">
+      <div class="pad">
+        <p class="kicker">Problem</p>
+        <h1>AIエージェントを使ってみたい。<br />学ばせてみたい。でも…</h1>
+        <div class="cols-3">
+          <article class="card problem-card">
+            <div class="art"><img src="problem-lock.webp" alt="消えてしまう情報" /></div>
+            <div class="body">
+              <h2>大事な情報が消されないか心配</h2>
+              <p>権限をすべて渡すか、まったく渡さないか。両極端になりがち…</p>
+            </div>
+          </article>
+          <article class="card problem-card">
+            <div class="art"><img src="problem-time.webp" alt="やり直しに取られる時間" /></div>
+            <div class="body">
+              <h2>意図が伝わらず、時間を取られる</h2>
+              <p>頼んでいない場所まで触ってしまい、やり直しに時間がかかる…</p>
+            </div>
+          </article>
+          <article class="card problem-card">
+            <div class="art"><img src="problem-secret.webp" alt="触ってほしくないファイル" /></div>
+            <div class="body">
+              <h2>触ってほしくないファイルがある</h2>
+              <p>社外秘や大切な個人情報にはアクセスしてほしくない…</p>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="footer"><span>Petassist</span><span>02</span></div>
+    </section>
+
+    <section class="slide">
+      <div class="pad">
+        <p class="kicker">Solution</p>
+        <h1>かわいいだけじゃない、使えるデスクペット。</h1>
+        <p class="lead">権限は、必要な分だけ渡す。ぺたしすとは、PCの安全を守るアシスタントです。</p>
+        <div class="solution-list">
+          <article class="card solution-row">
+            <div class="art"><img src="solution-scope.webp" alt="権限の範囲" /></div>
+            <div>
+              <h2>範囲を決める</h2>
+              <p>使うツールや開けるアプリ・フォルダなど、権限を渡す範囲を絞れます。</p>
+            </div>
+          </article>
+          <article class="card solution-row">
+            <div class="art"><img src="solution-approve.webp" alt="送信前の確認" /></div>
+            <div>
+              <h2>確認する</h2>
+              <p>メールや投稿は、ユーザーの承認を待って停止します。</p>
+            </div>
+          </article>
+          <article class="card solution-row">
+            <div class="art"><img src="solution-devices.webp" alt="スマホとPC" /></div>
+            <div>
+              <h2>スマホ・PCに対応</h2>
+              <p>シームレスにスマホにも移動して、作業を継続。</p>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="footer"><span>Petassist</span><span>03</span></div>
+    </section>
+
+    <section class="slide">
+      <div class="pad">
+        <p class="kicker">How to use</p>
+        <h1>こんな使い方ができます</h1>
+        <p class="lead">アシスタントごとに、権限も、使うモデルも変えられます。</p>
+        <div class="cols-3">
+          <article class="card use-card">
+            <div class="halo">
+              <img src="../../public/party/cat/02.webp" alt="ねこ" />
+            </div>
+            <p class="who">01 / ねこ</p>
+            <h2>検索や調べ物</h2>
+            <p class="blurb">閲覧専門。フォルダやPCの中は見ても、中身は変更不可に。</p>
+          </article>
+          <article class="card use-card">
+            <div class="halo">
+              <img src="../../public/party/bunny/02.webp" alt="うさぎ" />
+            </div>
+            <p class="who">02 / うさぎ</p>
+            <h2>下書きだけ</h2>
+            <p class="blurb">返信や告知の文を作って、送る直前でユーザー承認を待機。</p>
+          </article>
+          <article class="card use-card">
+            <div class="halo">
+              <img src="../../public/party/dog/09.webp" alt="いぬ" />
+            </div>
+            <p class="who">03 / いぬ</p>
+            <h2>ツールをつくる</h2>
+            <p class="blurb">渡したフォルダの中で、ファイル作成やフォルダ整理などを行います。</p>
+          </article>
+        </div>
+      </div>
+      <div class="footer"><span>Petassist</span><span>04</span></div>
+    </section>
+
+    <section class="slide">
+      <div class="pad">
+        <p class="kicker">Architecture</p>
+        <h1>技術構成</h1>
+        <div class="stack">
+          <article class="card layer">
+            <span class="layer-name">CLIENT</span>
+            <div class="brands">
+              <div class="brand"><img src="../logos/electron.svg" alt="" /><span>Electron</span></div>
+              <div class="brand"><img src="../logos/apple.svg" alt="" /><span>macOS</span></div>
+            </div>
+          </article>
+          <div class="arrow">↓</div>
+          <article class="card layer">
+            <span class="layer-name">DESK</span>
+            <div class="brands">
+              <div class="brand"><img src="../logos/nextdotjs.svg" alt="" /><span>Next.js</span></div>
+              <div class="brand"><img src="../logos/react.svg" alt="" /><span>React</span></div>
+              <div class="brand"><img src="../logos/typescript.svg" alt="" /><span>TypeScript</span></div>
+              <div class="brand"><img src="../logos/nodedotjs.svg" alt="" /><span>Node.js</span></div>
+              <div class="brand"><img src="../logos/tailwindcss.svg" alt="" /><span>Tailwind</span></div>
+              <div class="brand"><img src="../logos/radixui.svg" alt="" /><span>Radix UI</span></div>
+              <div class="brand"><img src="../logos/framer.svg" alt="" /><span>Framer</span></div>
+            </div>
+          </article>
+          <div class="arrow">↓</div>
+          <div class="split">
+            <article class="card layer">
+              <span class="layer-name">HARNESS</span>
+              <div class="brands">
+                <div class="brand"><img src="../logos/trueforge.svg" alt="" /><span>TrueForge</span></div>
+                <div class="brand"><img src="../logos/mcp.svg" alt="" /><span>MCP</span></div>
+                <div class="brand"><img src="../logos/daytona.png" alt="" class="wide" /><span>Daytona</span></div>
+                <div class="brand"><img src="../logos/slack-color.svg" alt="" /><span>Slack</span></div>
+              </div>
+            </article>
+            <article class="card layer">
+              <span class="layer-name">MODEL</span>
+              <div class="brands">
+                <div class="brand"><img src="../logos/openai.svg" alt="" /><span>OpenAI</span></div>
+                <div class="brand"><img src="../logos/googlegemini.svg" alt="" /><span>Gemini</span></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <div class="footer"><span>Petassist</span><span>05</span></div>
+    </section>
+    <script>
+      const page = Number(new URLSearchParams(location.search).get("p"));
+      if (page >= 1) {
+        document.body.style.padding = "0";
+        document.body.style.background = "#fff";
+        document.querySelectorAll(".slide").forEach((slide, i) => {
+          if (i === page - 1) {
+            slide.style.display = "block";
+            slide.style.margin = "0";
+            slide.style.borderRadius = "0";
+            slide.style.boxShadow = "none";
+          } else {
+            slide.style.display = "none";
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

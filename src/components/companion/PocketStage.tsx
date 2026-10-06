@@ -37,7 +37,8 @@ import {
 import { useI18n } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
-const TOKEN_KEY = "pockassist.companion.token";
+const TOKEN_KEY = "petassist.companion.token";
+const LEGACY_TOKEN_KEY = "pockassist.companion.token";
 const SPRITE = 112;
 const REST_PAD = 16;
 
@@ -100,8 +101,13 @@ export function PocketStage() {
 
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem(TOKEN_KEY);
-      if (stored) setToken(stored);
+      const stored =
+        sessionStorage.getItem(TOKEN_KEY) ??
+        sessionStorage.getItem(LEGACY_TOKEN_KEY);
+      if (stored) {
+        sessionStorage.setItem(TOKEN_KEY, stored);
+        setToken(stored);
+      }
     } catch {
       /* ignore */
     }

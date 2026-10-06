@@ -86,14 +86,23 @@ function withChatRecap(
     : `Earlier chat:\n${body}\n\nNow:\n${message}`;
 }
 
-export async function harnessStatus(): Promise<{
+type HarnessSnapshot = {
   runtime: AgentRuntime | null;
   trueforge: Awaited<ReturnType<typeof probeTrueForge>>;
   openai: ReturnType<typeof probeOpenAi>;
   gemini: ReturnType<typeof probeGemini>;
   mcp: Awaited<ReturnType<typeof listMcpCatalog>>;
   imageModels: ReturnType<typeof availableImageModels>;
-}> {
+};
+
+let harnessCache: { at: number; value: HarnessSnapshot } | null = null;
+
+export async function harnessStatus(): Promise<HarnessSnapshot> {
+  const now = Date.now();
+  const ttl = harnessCache?.value.runtime ? 30_000 : 4_000;
+  if (harnessCache && now - harnessCache.at < ttl) {
+    return harnessCache.value;
+  }
   const tf = await probeTrueForge();
   const oa = probeOpenAi();
   const gemini = probeGemini();
@@ -107,7 +116,7 @@ export async function harnessStatus(): Promise<{
       : gemini.ok
         ? "openai"
         : null;
-  return {
+  const value: HarnessSnapshot = {
     runtime,
     trueforge: tf,
     openai: oa,
@@ -115,6 +124,8 @@ export async function harnessStatus(): Promise<{
     mcp,
     imageModels: availableImageModels(),
   };
+  harnessCache = { at: now, value };
+  return value;
 }
 
 export async function runAgentTurn(req: TurnRequest, emit: Emit) {
@@ -130,6 +141,7 @@ export async function runAgentTurn(req: TurnRequest, emit: Emit) {
     session.grants = parsedGrants;
     session.config = config;
   }
+  emit({ type: "progress", progress: 6 });
   const status = await harnessStatus();
 
   if (session?.pending?.toolName === "desk_organize" && session.deskPending) {

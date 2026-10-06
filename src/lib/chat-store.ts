@@ -3,8 +3,10 @@
 import { DESK_ID, type ChatLine, type ChatRole } from "@/lib/talk";
 import type { DeskArtifact } from "@/lib/agent/types";
 
-const KEY_V1 = "pockassist.chat.v1";
-const KEY = "pockassist.chat.v2";
+const KEY_V1 = "petassist.chat.v1";
+const KEY = "petassist.chat.v2";
+const LEGACY_KEY_V1 = "pockassist.chat.v1";
+const LEGACY_KEY = "pockassist.chat.v2";
 const MAX_PER_PET = 80;
 const MAX_THREADS = 40;
 const MAX_TEXT = 4000;
@@ -74,7 +76,9 @@ function isChatLine(value: unknown): value is ChatLine {
 function migrateV1(): ChatStoreV2 {
   if (typeof window === "undefined") return emptyStore();
   try {
-    const raw = window.localStorage.getItem(KEY_V1);
+    const raw =
+      window.localStorage.getItem(KEY_V1) ??
+      window.localStorage.getItem(LEGACY_KEY_V1);
     if (!raw) return emptyStore();
     const parsed = JSON.parse(raw) as ChatMap;
     if (!parsed || typeof parsed !== "object") return emptyStore();
@@ -119,7 +123,9 @@ function migrateV1(): ChatStoreV2 {
 function loadStore(): ChatStoreV2 {
   if (typeof window === "undefined") return emptyStore();
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw =
+      window.localStorage.getItem(KEY) ??
+      window.localStorage.getItem(LEGACY_KEY);
     if (!raw) {
       const migrated = migrateV1();
       if (Object.keys(migrated.threads).length) saveStore(migrated);

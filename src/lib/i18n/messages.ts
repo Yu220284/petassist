@@ -52,6 +52,9 @@ export type Messages = {
     editFailed: string;
     paintErase: string;
     imageMode: string;
+    mode: string;
+    modes: { agent: string; plan: string; ask: string; image: string };
+    modeHint: { agent: string; plan: string; ask: string; image: string };
     attach: string;
     attachFile: string;
     attachPhoto: string;
@@ -276,6 +279,7 @@ export type Messages = {
   selected: {
     heading: (name: string, role: string) => string;
     license: string;
+    species: string;
     coat: string;
     gauge: string;
     can: string;
@@ -396,7 +400,7 @@ export const ja: Messages = {
     body: "来週のイベント、チームの Slack に宣伝してくれませんか。名簿もください。",
     run: "この仕事を任せる",
     running: "しらべてます…",
-    pinAll: "上に貼る",
+    pinAll: "デスクに貼る",
   },
   talk: {
     ask: "なにを任せる？",
@@ -425,6 +429,19 @@ export const ja: Messages = {
     editFailed: "直せなかったよ。",
     paintErase: "塗って消す",
     imageMode: "image",
+    mode: "モード",
+    modes: {
+      agent: "エージェント",
+      plan: "プラン",
+      ask: "アスク",
+      image: "画像",
+    },
+    modeHint: {
+      agent: "指示する",
+      plan: "計画してほしいことを書く",
+      ask: "質問する",
+      image: "描いてほしいものを書く",
+    },
     attach: "添付",
     attachFile: "ファイル",
     attachPhoto: "内部の画像",
@@ -476,7 +493,7 @@ export const ja: Messages = {
     openDock: "ドックを開く",
     unpin: "はがす",
     pin: "モニターに貼る",
-    pinAll: "上に貼る",
+    pinAll: "デスクに貼る",
     talk: "話す",
     policy: "方針のルール",
     grants: "権限を変更",
@@ -734,7 +751,7 @@ export const ja: Messages = {
     policyPlaceholder: "なるべく早めに終わらせる",
     save: "覚える",
     modelHeading: "LLM Gateway · モデル",
-    modelHint: "うさぎは Gemini、いぬは OpenAI、のように同時に別モデルへ回せます。",
+    modelHint: "この子が使うモデルを選べます。種類のちがいはおまけ程度です。",
     imageHeading: "画像モデル",
     imageHint: "キーが通っているものだけ選べるよ。",
     imageNone: "画像用のキーがまだないよ。",
@@ -748,15 +765,16 @@ export const ja: Messages = {
   },
   busy: {
     title: "ちょっと重くなるかも",
-    pinAll: "6匹を一度にモニターへ貼ります。窓が多いと、動きが遅くなることがあります。",
-    activate: "同時に動かす子が多いと、この Mac が重くなることがあります。",
+    pinAll: "デスクに動かすアバターは一体までです。いま貼っている子を入れ替えます。",
+    activate: "同時に動かすのは一体までです。ほかの子を止めてからにしてね。",
     continue: "続ける",
     cancel: "やめる",
   },
   selected: {
     heading: (name, role) => `せんたく中: ${name}（${role}）`,
     license: "ライセンス",
-    coat: "毛色",
+    species: "種類（おまけ）",
+    coat: "毛色（おまけ）",
     gauge: "ゲージの色",
     can: "できること",
     cannot: "できないこと",
@@ -957,7 +975,7 @@ export const en: Messages = {
     body: "Could you post next week's event to the team Slack, and send me the roster too?",
     run: "Hand this job over",
     running: "Working…",
-    pinAll: "Stick to top",
+    pinAll: "Stick to desk",
   },
   talk: {
     ask: "What should I do?",
@@ -986,6 +1004,19 @@ export const en: Messages = {
     editFailed: "Couldn't edit that.",
     paintErase: "Paint to erase",
     imageMode: "image",
+    mode: "Mode",
+    modes: {
+      agent: "Agent",
+      plan: "Plan",
+      ask: "Ask",
+      image: "Image",
+    },
+    modeHint: {
+      agent: "Instruct",
+      plan: "What should we plan?",
+      ask: "Ask a question",
+      image: "What should I draw?",
+    },
     attach: "Attach",
     attachFile: "File",
     attachPhoto: "Photos",
@@ -1038,7 +1069,7 @@ export const en: Messages = {
     openDock: "Open dock",
     unpin: "Peel off",
     pin: "Stick to monitor",
-    pinAll: "Stick to top",
+    pinAll: "Stick to desk",
     talk: "Talk",
     policy: "Policy rules",
     grants: "Change grants",
@@ -1296,7 +1327,7 @@ export const en: Messages = {
     policyPlaceholder: "Finish as soon as you can.",
     save: "Remember",
     modelHeading: "LLM Gateway · model",
-    modelHint: "Bunny can use Gemini while the dog uses OpenAI at the same time.",
+    modelHint: "Pick the model for this pet. Species is just a look.",
     imageHeading: "Image model",
     imageHint: "Only models whose API key is present.",
     imageNone: "No image API key yet.",
@@ -1310,15 +1341,16 @@ export const en: Messages = {
   },
   busy: {
     title: "This might get heavy",
-    pinAll: "All six will stick to the monitor at once. Lots of windows can slow this Mac down.",
-    activate: "Running many pets at once can slow this Mac down.",
+    pinAll: "Only one avatar moves on the desk at a time. This swaps the sticky.",
+    activate: "Only one pet can be live at a time. Stop the other first.",
     continue: "Continue",
     cancel: "Cancel",
   },
   selected: {
     heading: (name, role) => `Selected: ${name} (${role})`,
     license: "License",
-    coat: "Coat",
+    species: "Species (extra)",
+    coat: "Coat (extra)",
     gauge: "Gauge color",
     can: "Can",
     cannot: "Cannot",

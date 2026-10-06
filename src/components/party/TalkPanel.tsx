@@ -20,6 +20,15 @@ import {
 import { useI18n } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 import { useTypewriter } from "@/lib/hooks/use-typewriter";
+import {
+  WORK_MODE_IDS,
+  parsePetConfig,
+  type WorkMode,
+} from "@/lib/pet-config";
+import { configFor, loadConfigs, saveConfigs } from "@/lib/pet-config-store";
+import { publishDeskConfig, subscribeDesk } from "@/lib/desk-channel";
+import { resetAgentSessions } from "@/lib/agent/client";
+import { isDeskTalk } from "@/lib/talk";
 
 type SpeechRec = {
   lang: string;
@@ -144,7 +153,8 @@ export function TalkPanel({
 }: TalkPanelProps) {
   const { t, locale } = useI18n();
   const [draft, setDraft] = useState("");
-  const [imageMode, setImageMode] = useState(false);
+  const [workMode, setWorkMode] = useState<WorkMode>("agent");
+  const [modeOpen, setModeOpen] = useState(false);
   const [voiceOn, setVoiceOn] = useState(false);
   const [listening, setListening] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
@@ -188,7 +198,7 @@ export function TalkPanel({
         ? prompt.text
         : null;
   const { shown, done, skip } = useTypewriter(greeting ?? "", {
-    instant: !prompt.streaming || !greeting,
+    instant: Boolean(prompt.streaming) || !greeting,
   });
   const recentImages = history.filter((line) => line.imageUrl).slice(-6);
   const canSend = Boolean(draft.trim() || attachments.length) && !busy;
@@ -201,8 +211,18 @@ export function TalkPanel({
     setPlusOpen(false);
     setRoomOpen(false);
     setFilesOpen(false);
-    setImageMode(false);
+    setModeOpen(false);
+    const loaded = configFor(loadConfigs(), prompt.petId).workMode;
+    setWorkMode(loaded === "image" && !onDraw ? "agent" : loaded);
   }, [prompt.petId, prompt.roomId]);
+
+  useEffect(() => {
+    return subscribeDesk((event) => {
+      if (event.type === "config" && event.id === prompt.petId) {
+        setWorkMode(parsePetConfig(event.config).workMode);
+      }
+    });
+  }, [prompt.petId]);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -269,16 +289,30 @@ export function TalkPanel({
 
   const payload = () => attachmentPayload(attachments);
 
+  const persistWorkMode = (mode: WorkMode) => {
+    setWorkMode(mode);
+    setModeOpen(false);
+    const petId = prompt.petId;
+    const map = loadConfigs();
+    const next = parsePetConfig({ ...configFor(map, petId), workMode: mode });
+    saveConfigs({ ...map, [petId]: next });
+    publishDeskConfig(petId, next);
+    if (mode !== "image") {
+      void resetAgentSessions(isDeskTalk(petId) ? undefined : petId);
+    }
+  };
+
   const submitNow = (text: string, fromVoice = false) => {
     const atts = payload();
     const trimmed = text.trim();
     if ((!trimmed && !atts.length) || busy) return;
     if (fromVoice) waitRef.current = { len: historyRef.current.length, sawBusy: false };
-    if (imageMode && onDraw) onDraw(trimmed, atts);
+    if (workMode === "image" && onDraw) onDraw(trimmed, atts);
     else onSend(trimmed, atts);
     setDraft("");
     setAttachments([]);
     setPlusOpen(false);
+    setModeOpen(false);
   };
 
   const sendDraft = () => submitNow(draft);
@@ -808,27 +842,54 @@ export function TalkPanel({
               plusOpen ? "bg-[#302c55] text-white" : "bg-slate-100 text-[#302c55]"
             )}
             aria-label={t.talk.attach}
-            onClick={() => setPlusOpen((open) => !open)}
+            onClick={() => {
+              setPlusOpen((open) => !open);
+              setModeOpen(false);
+            }}
           >
             +
           </button>
-          {onDraw ? (
+          <div className="relative">
             <button
               type="button"
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full",
-                imageMode
-                  ? "bg-[#302c55] text-white"
-                  : "bg-slate-100 text-slate-500"
+                "flex h-7 max-w-[7.5rem] items-center gap-0.5 rounded-full px-2 text-[10px] font-semibold",
+                workMode === "agent"
+                  ? "bg-slate-100 text-[#302c55]"
+                  : "bg-[#302c55] text-white"
               )}
-              aria-pressed={imageMode}
-              aria-label={t.talk.draw}
-              title={t.talk.draw}
-              onClick={() => setImageMode((on) => !on)}
+              aria-expanded={modeOpen}
+              aria-label={t.talk.mode}
+              title={t.talk.mode}
+              onClick={() => {
+                setModeOpen((open) => !open);
+                setPlusOpen(false);
+              }}
             >
-              <PaintIcon />
+              <span className="truncate">{t.talk.modes[workMode]}</span>
+              <span className="text-[8px] opacity-70">▾</span>
             </button>
-          ) : null}
+            {modeOpen ? (
+              <div className="absolute bottom-full left-0 z-20 mb-1 min-w-[8.5rem] rounded-xl bg-white p-1 shadow-lg ring-1 ring-slate-200">
+                {WORK_MODE_IDS.filter((id) => id !== "image" || onDraw).map(
+                  (id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={cn(
+                        "flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[11px] hover:bg-slate-50",
+                        workMode === id && "bg-slate-50 font-semibold text-[#302c55]"
+                      )}
+                      onClick={() => persistWorkMode(id)}
+                    >
+                      {id === "image" ? <PaintIcon /> : null}
+                      {t.talk.modes[id]}
+                    </button>
+                  )
+                )}
+              </div>
+            ) : null}
+          </div>
           <button
             type="button"
             className={cn(
@@ -899,7 +960,9 @@ export function TalkPanel({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onDraftKeyDown}
-          placeholder={listening ? t.talk.listening : t.talk.instruct}
+          placeholder={
+            listening ? t.talk.listening : t.talk.modeHint[workMode]
+          }
           rows={3}
           wrap="soft"
           disabled={busy}
@@ -911,7 +974,7 @@ export function TalkPanel({
           className="h-8 px-2 text-xs"
           disabled={!canSend}
         >
-          {busy && imageMode ? "…" : t.talk.send}
+          {busy && workMode === "image" ? "…" : t.talk.send}
         </Button>
       </form>
       <input
@@ -953,7 +1016,7 @@ function ChatBubble({
   hideName?: boolean;
 }) {
   const { shown, done, skip } = useTypewriter(line.text, {
-    instant: !live || Boolean(line.imageUrl),
+    instant: live || Boolean(line.imageUrl),
   });
   const user = line.role === "user";
   const system = line.role === "system";

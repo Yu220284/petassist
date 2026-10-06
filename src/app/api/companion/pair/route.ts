@@ -16,7 +16,7 @@ function asPets(raw: unknown): CompanionPet[] {
     return [
       {
         id: r.id,
-        icon: typeof r.icon === "string" ? r.icon : `/party/${r.id}/02.png`,
+        icon: typeof r.icon === "string" ? r.icon : `/party/${r.id}/02.webp`,
         accent: typeof r.accent === "string" ? r.accent : "#94a3b8",
         status: typeof r.status === "string" ? (r.status as CompanionPet["status"]) : "idle",
         location: "pc",

@@ -50,7 +50,9 @@ function PreviewBody() {
         return;
       }
       try {
-        const cached = window.localStorage.getItem(`pockassist.preview.${id}`);
+        const cached =
+          window.localStorage.getItem(`petassist.preview.${id}`) ??
+          window.localStorage.getItem(`pockassist.preview.${id}`);
         const parsed = cached ? (JSON.parse(cached) as SheetData) : null;
         if (parsed && Array.isArray(parsed.headers)) {
           setSheet({

@@ -99,17 +99,18 @@ export async function listMcpCatalog(): Promise<McpCatalog> {
 
 export function mcpServersFor(
   _petId: string,
-  catalog: McpCatalog
+  catalog: McpCatalog,
+  mode?: import("@/lib/pet-config").WorkMode
 ): McpServerRef[] {
   const servers: McpServerRef[] = [];
-  if (catalog.search) {
+  if (catalog.search && mode !== "image") {
     servers.push({
       name: catalog.search,
       enable_tools: ["@read-only"],
       preload: false,
     });
   }
-  if (catalog.write) {
+  if (catalog.write && (!mode || mode === "agent")) {
     servers.push({
       name: catalog.write,
       enable_tools: ["@all"],

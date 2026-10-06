@@ -77,7 +77,6 @@ import {
   type PartyStatus,
 } from "@/data/party";
 import {
-  ACTIVE_SOFT_LIMIT,
   applyPartyOrder,
   isActiveStatus,
   loadPartyOrder,
@@ -663,11 +662,22 @@ export function DemoConsole({ embedded = false }: { embedded?: boolean }) {
     return true;
   };
 
+  const configForTurn = (petId: string) => {
+    const base = configFor(configMapRef.current, petId);
+    const talkId = promptRef.current?.petId;
+    if (!talkId || talkId === petId) return base;
+    const talkMode = configFor(configMapRef.current, talkId).workMode;
+    return parsePetConfig({ ...base, workMode: talkMode });
+  };
+
   const runPet = async (
     petId: string,
     input: { message?: string; approval?: "allow" | "deny"; choiceId?: string }
   ): Promise<TurnOutcome> => {
-    if (input.message) await ensureFolderGrant(petId, input.message);
+    const turnConfig = configForTurn(petId);
+    if (input.message && turnConfig.workMode === "agent") {
+      await ensureFolderGrant(petId, input.message);
+    }
     setSelectedId(petId);
     setStatus(petId, "working");
     let out: TurnOutcome;
@@ -682,7 +692,7 @@ export function DemoConsole({ embedded = false }: { embedded?: boolean }) {
         approval: input.approval,
         choiceId: input.choiceId,
         grants: grantsFor(grantsMapRef.current, petId),
-        config: configFor(configMapRef.current, petId),
+        config: turnConfig,
       },
       (event, partial) => {
         if (partial.progress) setProgress(petId, partial.progress);
@@ -1150,10 +1160,13 @@ export function DemoConsole({ embedded = false }: { embedded?: boolean }) {
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.petassist) return;
-    const MAIL_SEEN = "pockassist.mail.seen.v1";
+    const MAIL_SEEN = "petassist.mail.seen.v1";
+    const LEGACY_MAIL_SEEN = "pockassist.mail.seen.v1";
     const loadSeen = () => {
       try {
-        const raw = window.localStorage.getItem(MAIL_SEEN);
+        const raw =
+          window.localStorage.getItem(MAIL_SEEN) ??
+          window.localStorage.getItem(LEGACY_MAIL_SEEN);
         const parsed = raw ? (JSON.parse(raw) as string[]) : [];
         return new Set(parsed);
       } catch {
@@ -1351,16 +1364,15 @@ export function DemoConsole({ embedded = false }: { embedded?: boolean }) {
       (status === "idle" || status === "working") &&
       current &&
       !isActiveStatus(current.status);
-    const active = partyRef.current.filter((p) => isActiveStatus(p.status)).length;
-    if (activating && active >= ACTIVE_SOFT_LIMIT) {
-      setBusy({
-        body: tRef.current.busy.activate,
-        run: () => {
-          setStatus(id, status);
-          if (status === "idle") pushTalk(null);
-        },
-      });
-      return;
+    if (activating) {
+      const others = partyRef.current.filter(
+        (p) => p.id !== id && isActiveStatus(p.status)
+      );
+      if (others.length) {
+        for (const other of others) {
+          setStatus(other.id, "stopped");
+        }
+      }
     }
     setStatus(id, status);
     if (status === "idle" || status === "stopped") pushTalk(null);
@@ -1564,6 +1576,38 @@ export function DemoConsole({ embedded = false }: { embedded?: boolean }) {
             >
               {t.selected.stop}
             </Button>
+          </div>
+          <p className="mt-3 text-[11px] font-semibold text-slate-500">
+            {t.selected.species}
+          </p>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {party.map((pet) => (
+              <button
+                key={pet.id}
+                type="button"
+                onClick={() => {
+                  setSelectedId(pet.id);
+                  if (desk.pinned.includes(selected.id) || desk.pinned.length) {
+                    void window.petassist?.pin(pet.id);
+                  }
+                }}
+                className={cn(
+                  "rounded-lg p-0.5",
+                  selected.id === pet.id
+                    ? "ring-2 ring-[hsl(var(--ring))]"
+                    : "opacity-70"
+                )}
+                title={t.pets[pet.id]?.name ?? pet.nameJa}
+              >
+                <img
+                  src={pet.icon}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="object-contain"
+                />
+              </button>
+            ))}
           </div>
           <p className="mt-3 text-[11px] font-semibold text-slate-500">
             {t.selected.coat}

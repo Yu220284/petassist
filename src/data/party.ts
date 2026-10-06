@@ -34,6 +34,12 @@ export const LIVE_IDS = [
 
 export type LivePetId = (typeof LIVE_IDS)[number];
 
+/**
+ * Available desk avatars are animals only.
+ * Obake / Bake.Ch ghost is intentionally not in this roster.
+ */
+export const AVAILABLE_AVATARS = LIVE_IDS;
+
 /** Default desk order: higher license first, then loyal / capable image. */
 export const DEFAULT_PARTY_ORDER = [
   "dog",
@@ -107,7 +113,7 @@ const PARTY_SEED: PartyMember[] = [
     name: "cat",
     nameJa: "ねこ",
     role: "デスク",
-    icon: "/party/cat/02.png",
+    icon: "/party/cat/02.webp",
     accent: "#e8a07a",
     progress: 0,
     tier: "L0",
@@ -129,7 +135,7 @@ const PARTY_SEED: PartyMember[] = [
     name: "penguin",
     nameJa: "ぺんぎん",
     role: "デスク",
-    icon: "/party/penguin/04.png",
+    icon: "/party/penguin/04.webp",
     accent: "#6ba8c9",
     progress: 0,
     tier: "L1",
@@ -149,7 +155,7 @@ const PARTY_SEED: PartyMember[] = [
     name: "bunny",
     nameJa: "うさぎ",
     role: "デスク",
-    icon: "/party/bunny/02.png",
+    icon: "/party/bunny/02.webp",
     accent: "#e7a4b6",
     progress: 0,
     tier: "L2",
@@ -171,7 +177,7 @@ const PARTY_SEED: PartyMember[] = [
     name: "dog",
     nameJa: "いぬ",
     role: "デスク",
-    icon: "/party/dog/09.png",
+    icon: "/party/dog/09.webp",
     accent: "#d4b15a",
     progress: 0,
     tier: "L3",
@@ -193,7 +199,7 @@ const PARTY_SEED: PartyMember[] = [
     name: "chick",
     nameJa: "ひよこ",
     role: "デスク",
-    icon: "/party/chick/02.png",
+    icon: "/party/chick/02.webp",
     accent: "#e3c45a",
     progress: 0,
     tier: "L1",
@@ -213,7 +219,7 @@ const PARTY_SEED: PartyMember[] = [
     name: "raccoondog",
     nameJa: "たぬき",
     role: "デスク",
-    icon: "/party/raccoondog/06.png",
+    icon: "/party/raccoondog/06.webp",
     accent: "#b7a894",
     progress: 0,
     tier: "L0",

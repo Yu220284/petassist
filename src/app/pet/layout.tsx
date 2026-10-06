@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
   icons: {
-    icon: "/party/cat/02.png",
-    shortcut: "/party/cat/02.png",
+    icon: "/party/cat/02.webp",
+    shortcut: "/party/cat/02.webp",
   },
 };
 

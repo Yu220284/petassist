@@ -5,15 +5,17 @@ import {
   parsePetConfig,
   type PetConfig,
 } from "@/lib/pet-config";
+import { readStorage, writeStorage } from "@/lib/storage-key";
 
-const KEY = "pockassist.config.v1";
+const KEY = "petassist.config.v1";
+const LEGACY_KEY = "pockassist.config.v1";
 
 export type ConfigMap = Record<string, PetConfig>;
 
 export function loadConfigs(): ConfigMap {
   if (typeof window === "undefined") return {};
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = readStorage(KEY, [LEGACY_KEY]);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (!parsed || typeof parsed !== "object") return {};
@@ -30,7 +32,7 @@ export function loadConfigs(): ConfigMap {
 export function saveConfigs(map: ConfigMap) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(map));
+    writeStorage(KEY, JSON.stringify(map));
   } catch {
     /* ignore */
   }

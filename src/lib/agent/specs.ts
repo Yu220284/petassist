@@ -84,6 +84,8 @@ Internet-meme fluent: forums, X, TikTok, copypasta, call-and-response. Each turn
   const extra =
     runtime === "trueforge" ? harnessClause() : grantClause(grants);
 
+  const mode = workModeClause(locale, config?.workMode);
+
   const policy = config?.policy?.trim()
     ? `\n\nTrainer policy (AI Gateway). Follow this even if it conflicts with “keep it short”:\n${config.policy.trim()}`
     : "";
@@ -96,7 +98,29 @@ Internet-meme fluent: forums, X, TikTok, copypasta, call-and-response. Each turn
     ? "\n\nMail.app is allowed. You may list unread mail, read one message, and draft a reply. Sending waits for the 送信 button (mail_send)."
     : "\n\nMail.app is not allowed. Do not read or send mail. If they want mail, ask them to grant Mail in the gate.";
 
-  return `${who}\n\n${sharedJob(locale)}\n\n${extra}${policy}${apps}${mail}\n\n${lang}`;
+  return `${who}\n\n${sharedJob(locale)}\n\n${extra}${mode}${policy}${apps}${mail}\n\n${lang}`;
+}
+
+function workModeClause(
+  locale: Locale,
+  mode?: import("@/lib/pet-config").WorkMode
+) {
+  if (mode === "plan") {
+    return locale === "ja"
+      ? `\n\nMODE: Plan. 実行しない。ファイルを書かない、送らない、コマンドを走らせない。調べて手順・リスク・順番だけ書く。ツールは読む・探すだけ。`
+      : `\n\nMODE: Plan. Do not execute. Do not write, send, or run commands. Research, then write a short ordered plan and risks. Read/search tools only.`;
+  }
+  if (mode === "ask") {
+    return locale === "ja"
+      ? `\n\nMODE: Ask. 質問に答えるだけ。実行しない。下書きも画像も作らない。必要なときだけ読む・探す。`
+      : `\n\nMODE: Ask. Answer the question only. Do not act, draft, or generate images. Read/search only if needed.`;
+  }
+  if (mode === "image") {
+    return locale === "ja"
+      ? `\n\nMODE: Image. generate_image だけ使う。`
+      : `\n\nMODE: Image. Use generate_image only.`;
+  }
+  return "";
 }
 
 function harnessClause() {
@@ -125,7 +149,7 @@ export function trueForgeAgentSpec(opts: {
   config?: import("@/lib/pet-config").PetConfig;
   mcp: import("./mcp").McpCatalog;
 }) {
-  const servers = mcpServersFor(opts.petId, opts.mcp);
+  const servers = mcpServersFor(opts.petId, opts.mcp, opts.config?.workMode);
   return {
     model: {
       name: opts.model,
