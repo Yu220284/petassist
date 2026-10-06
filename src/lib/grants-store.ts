@@ -1,15 +1,17 @@
 "use client";
 
 import { DEFAULT_GRANTS, parseGrants, type PetGrants } from "@/lib/grants";
+import { readStorage, writeStorage } from "@/lib/storage-key";
 
-const KEY = "pockassist.grants.v1";
+const KEY = "petassist.grants.v1";
+const LEGACY_KEY = "pockassist.grants.v1";
 
 export type GrantsMap = Record<string, PetGrants>;
 
 export function loadGrants(): GrantsMap {
   if (typeof window === "undefined") return {};
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = readStorage(KEY, [LEGACY_KEY]);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (!parsed || typeof parsed !== "object") return {};
@@ -26,7 +28,7 @@ export function loadGrants(): GrantsMap {
 export function saveGrants(map: GrantsMap) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(map));
+    writeStorage(KEY, JSON.stringify(map));
   } catch {
     /* ignore */
   }

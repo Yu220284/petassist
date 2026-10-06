@@ -48,6 +48,39 @@ export function probeGemini(): LlmStatus {
   return { ok: true, model: "gemini-2.0-flash" };
 }
 
+export function explainLlmError(err: unknown, locale: "ja" | "en" = "ja"): string {
+  const cause =
+    err instanceof Error
+      ? (err as Error & { cause?: { code?: string; message?: string } }).cause
+      : undefined;
+  const detail =
+    (cause && (cause.code || cause.message)) ||
+    (err instanceof Error ? err.message : "");
+  const raw = String(detail || "");
+  if (locale === "ja") {
+    if (/abort|timeout/i.test(raw)) {
+      return "モデルの応答が遅すぎたよ。もう一度送ってみて。";
+    }
+    if (/ENOTFOUND|EAI_AGAIN|dns/i.test(raw)) {
+      return "モデルの場所が見つからなかったよ。ネットを確認して、もう一度送ってみて。";
+    }
+    if (/ECONNREFUSED|ECONNRESET|UND_ERR|fetch failed|Failed to fetch/i.test(raw)) {
+      return "モデルに届かなかったよ。もう一度送ってみて。";
+    }
+    if (raw && raw !== "fetch failed" && raw !== "Failed to fetch") {
+      return `モデルに届かなかったよ（${raw.slice(0, 80)}）。`;
+    }
+    return "モデルに届かなかったよ。もう一度送ってみて。";
+  }
+  if (/abort|timeout/i.test(raw)) return "The model timed out. Try sending again.";
+  if (/ECONNREFUSED|ECONNRESET|UND_ERR|fetch failed|Failed to fetch|ENOTFOUND/i.test(raw)) {
+    return "Couldn't reach the model. Try sending again.";
+  }
+  return raw && raw !== "fetch failed"
+    ? `Couldn't reach the model (${raw.slice(0, 80)}).`
+    : "Couldn't reach the model. Try sending again.";
+}
+
 export function routeForModel(id: PetModelId): LlmRoute | { auto: true } {
   if (id === "auto") return { auto: true };
   if (id.startsWith("gemini:")) {
@@ -71,6 +104,44 @@ export function routeForModel(id: PetModelId): LlmRoute | { auto: true } {
 export async function openMacApp(appId: DeskAppId) {
   const row = APP_CATALOG.find((a) => a.id === appId);
   if (!row) throw new Error(`Unknown app ${appId}`);
-  await execFileAsync("open", ["-a", row.bundle], { timeout: 8000 });
-  return { ok: true, app: row.bundle };
+  const bundles = appId === "x" ? ["X", "Twitter"] : [row.bundle];
+  let last: unknown;
+  for (const bundle of bundles) {
+    try {
+      await execFileAsync("open", ["-a", bundle], { timeout: 8000 });
+      return { ok: true, app: bundle };
+    } catch (err) {
+      last = err;
+    }
+  }
+  throw last instanceof Error ? last : new Error("open failed");
+}
+
+export async function openXCompose(text: string) {
+  const body = text.trim();
+  const intent = `https://x.com/intent/tweet?text=${encodeURIComponent(body)}`;
+  for (const bundle of ["X", "Twitter"] as const) {
+    try {
+      await execFileAsync("open", ["-a", bundle, intent], { timeout: 8000 });
+      return {
+        ok: true,
+        opened: true,
+        posted: false,
+        delivered: false,
+        app: bundle,
+        text: body,
+      };
+    } catch {
+      /* try browser */
+    }
+  }
+  await execFileAsync("open", [intent], { timeout: 8000 });
+  return {
+    ok: true,
+    opened: true,
+    posted: false,
+    delivered: false,
+    app: "browser",
+    text: body,
+  };
 }

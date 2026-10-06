@@ -1,3 +1,9 @@
+export const SEND_TOOLS = ["slack_post", "x_post", "mail_send"] as const;
+
+export function isSendTool(name: string) {
+  return (SEND_TOOLS as readonly string[]).includes(name);
+}
+
 export type AgentRuntime = "trueforge" | "openai";
 
 export type AgentProgressEvent = {
@@ -22,6 +28,7 @@ export type AgentApprovalEvent = {
   toolName: string;
   detail: string;
   text: string;
+  choices?: { id: string; label: string }[];
 };
 
 export type AgentDoneEvent = {
@@ -35,6 +42,12 @@ export type AgentErrorEvent = {
   message: string;
 };
 
+export type AgentGrantEvent = {
+  type: "grant";
+  sessionId: string;
+  reason: "folder";
+};
+
 export type HarnessKind = "sandbox" | "subagent" | "mcp" | "oauth";
 
 export type AgentHarnessEvent = {
@@ -43,6 +56,31 @@ export type AgentHarnessEvent = {
   detail?: string;
 };
 
+export type AgentHandoffEvent = {
+  type: "handoff";
+  from: string;
+  to: string;
+};
+
+export type DeskArtifact =
+  | {
+      kind: "image";
+      id: string;
+      title?: string;
+      url: string;
+    }
+  | {
+      kind: "sheet";
+      id: string;
+      title?: string;
+      headers: string[];
+      rows: string[][];
+    };
+
+export type AgentArtifactEvent = {
+  type: "artifact";
+} & DeskArtifact;
+
 export type AgentStreamEvent =
   | AgentMetaEvent
   | AgentProgressEvent
@@ -50,7 +88,10 @@ export type AgentStreamEvent =
   | AgentApprovalEvent
   | AgentDoneEvent
   | AgentErrorEvent
-  | AgentHarnessEvent;
+  | AgentGrantEvent
+  | AgentHarnessEvent
+  | AgentHandoffEvent
+  | AgentArtifactEvent;
 
 export type PendingKind = "tool_approval" | "ask_user";
 
@@ -77,6 +118,14 @@ export type AgentSession = {
   pending?: PendingAction;
   grants?: import("@/lib/grants").PetGrants;
   config?: import("@/lib/pet-config").PetConfig;
+  pendingNames?: string[];
+  deskIntent?: "zip" | "folder";
+  deskPending?: {
+    names: string[];
+    extraPaths: string[];
+    found: string[];
+    intent: "zip" | "folder";
+  };
 };
 
 export type OpenAiMessage = {

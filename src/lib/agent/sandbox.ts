@@ -11,7 +11,9 @@ import {
   copyFile,
   looksBinary,
   mimeFor,
+  movePath,
   processImageFile,
+  replaceInFile,
   slidesFromFolder,
   toCsv,
   walkFiles,
@@ -21,9 +23,10 @@ import {
   writeUtf8,
   type PptxSlideIn,
 } from "./files";
+import { inspectShellCommand } from "./shell-policy";
 
 const execFileAsync = promisify(execFile);
-const TIMEOUT_MS = { workspace: 20_000, full_access: 60_000 };
+const TIMEOUT_MS = { workspace: 60_000, full_access: 120_000 };
 
 function childEnv(): Record<string, string> {
   const keep = ["PATH", "HOME", "USER", "TMPDIR", "LANG", "LC_ALL", "TERM"];
@@ -36,6 +39,7 @@ function childEnv(): Record<string, string> {
 }
 
 export const DESK_READ_TOOLS = ["list_dir", "read_file", "glob_files"] as const;
+export const DESK_ARCHIVE_TOOLS = ["zip_files"] as const;
 export const DESK_WRITE_TOOLS = [
   "write_file",
   "append_file",
@@ -45,6 +49,10 @@ export const DESK_WRITE_TOOLS = [
   "write_pptx",
   "process_image",
   "copy_file",
+  "mkdir",
+  "move_file",
+  "edit_file",
+  "zip_files",
   "run_command",
 ] as const;
 export const DESK_TOOLS = [...DESK_READ_TOOLS, ...DESK_WRITE_TOOLS] as const;
@@ -57,12 +65,43 @@ export function isDeskWriteTool(name: string) {
   return (DESK_WRITE_TOOLS as readonly string[]).includes(name);
 }
 
+export function isSharedDeskWrite(name: string) {
+  return (DESK_ARCHIVE_TOOLS as readonly string[]).includes(name);
+}
+
 function normalize(p: string) {
   return path.resolve(p);
 }
 
 function asString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : "";
+}
+
+function zipArg(rel: string) {
+  return rel.startsWith("-") ? `./${rel}` : rel;
+}
+
+function commonDir(paths: string[]) {
+  if (!paths.length) return "";
+  const parts = paths.map((p) => normalize(p).split(path.sep));
+  const first = parts[0] ?? [];
+  let i = 0;
+  while (i < first.length && parts.every((p) => p[i] === first[i])) i += 1;
+  if (i === 0) return "";
+  const joined = first.slice(0, i).join(path.sep);
+  return joined || path.sep;
+}
+
+function collectZipSources(args: Record<string, unknown>) {
+  const out: string[] = [];
+  const push = (value: unknown) => {
+    if (typeof value === "string" && value.trim()) out.push(value.trim());
+  };
+  if (Array.isArray(args.paths)) for (const p of args.paths) push(p);
+  if (Array.isArray(args.files)) for (const p of args.files) push(p);
+  push(args.source);
+  if (!asString(args.dest)) push(args.path);
+  return [...new Set(out)].slice(0, MAX_LIST);
 }
 
 export function lexicalInside(target: string, roots: string[]) {
@@ -107,8 +146,24 @@ export function pathsFromArgs(
   if (name === "run_command") {
     return [asString(args.cwd) || fallback || process.cwd()];
   }
-  if (name === "process_image" || name === "copy_file") {
+  if (name === "process_image" || name === "copy_file" || name === "move_file") {
     return [asString(args.source), asString(args.dest)].filter(Boolean);
+  }
+  if (name === "mkdir" || name === "edit_file") {
+    return [asString(args.path) || fallback].filter(Boolean);
+  }
+  if (name === "zip_files") {
+    const out: string[] = [];
+    if (Array.isArray(args.paths)) {
+      for (const p of args.paths) if (typeof p === "string" && p.trim()) out.push(p.trim());
+    }
+    if (Array.isArray(args.files)) {
+      for (const p of args.files) if (typeof p === "string" && p.trim()) out.push(p.trim());
+    }
+    if (asString(args.source)) out.push(asString(args.source));
+    if (asString(args.path)) out.push(asString(args.path));
+    if (asString(args.dest)) out.push(asString(args.dest));
+    return out.length ? out : fallback ? [fallback] : [];
   }
   if (name === "write_pdf") {
     return [asString(args.path) || fallback, asString(args.from_file)].filter(
@@ -417,16 +472,229 @@ export async function executeDeskTool(
       return JSON.stringify(await copyFile(source.path, dest.path));
     }
 
+    if (name === "mkdir") {
+      const resolved = await resolve(asString(args.path));
+      if (!resolved.ok) return fail(resolved.error);
+      await fs.mkdir(resolved.path, { recursive: true });
+      return JSON.stringify({ ok: true, path: resolved.path, dir: true });
+    }
+
+    if (name === "move_file") {
+      const source = await resolve(asString(args.source));
+      if (!source.ok) return fail(source.error);
+      let destInput = asString(args.dest);
+      if (!destInput) {
+        return fail(locale === "ja" ? "移動先が空です" : "Empty destination");
+      }
+      const destResolved = await resolve(destInput);
+      if (!destResolved.ok) return fail(destResolved.error);
+      let destPath = destResolved.path;
+      try {
+        const st = await fs.stat(destPath);
+        if (st.isDirectory()) {
+          destPath = path.join(destPath, path.basename(source.path));
+        }
+      } catch {
+        /* dest does not exist yet */
+      }
+      if (confine) {
+        const checked = await realpathInside(path.dirname(destPath), roots);
+        if (!checked.ok) return fail(deny(destPath));
+      }
+      return JSON.stringify(await movePath(source.path, destPath));
+    }
+
+    if (name === "edit_file") {
+      const resolved = await resolve(asString(args.path));
+      if (!resolved.ok) return fail(resolved.error);
+      const oldString = typeof args.old_string === "string" ? args.old_string : "";
+      const newString = typeof args.new_string === "string" ? args.new_string : "";
+      try {
+        return JSON.stringify(
+          await replaceInFile(
+            resolved.path,
+            oldString,
+            newString,
+            args.replace_all === true
+          )
+        );
+      } catch (err) {
+        return fail(err instanceof Error ? err.message : "edit failed");
+      }
+    }
+
+    if (name === "zip_files") {
+      const inputs = collectZipSources(args);
+      if (!inputs.length) {
+        return fail(
+          locale === "ja"
+            ? "圧縮するパスが空です"
+            : "No paths to zip"
+        );
+      }
+
+      const resolvedSrc: string[] = [];
+      for (const input of inputs) {
+        const candidates = path.isAbsolute(input)
+          ? [input]
+          : roots.length
+            ? roots.flatMap((root) => [
+                path.join(root, input),
+                path.join(root, path.basename(input)),
+              ])
+            : [path.resolve(input)];
+        let lastError =
+          locale === "ja" ? `見つかりません: ${input}` : `Not found: ${input}`;
+        let found = "";
+        for (const candidate of candidates) {
+          const resolved = await resolve(candidate);
+          if (!resolved.ok) {
+            lastError = resolved.error;
+            continue;
+          }
+          try {
+            await fs.access(resolved.path);
+            found = resolved.path;
+            break;
+          } catch {
+            lastError =
+              locale === "ja"
+                ? `見つかりません: ${resolved.path}`
+                : `Not found: ${resolved.path}`;
+          }
+        }
+        if (!found) return fail(lastError);
+        resolvedSrc.push(found);
+      }
+
+      const parents = resolvedSrc.map((src) => path.dirname(src));
+      const cwd = commonDir(parents);
+      if (!cwd || cwd === path.sep) {
+        return fail(
+          locale === "ja"
+            ? "同じ許可フォルダの中だけをまとめてください"
+            : "Zip items from the same granted folder"
+        );
+      }
+
+      const destIn = asString(args.dest);
+      const defaultName =
+        resolvedSrc.length === 1
+          ? `${path.basename(resolvedSrc[0]!)}.zip`
+          : locale === "ja"
+            ? "アーカイブ.zip"
+            : "Archive.zip";
+      const grantRoot =
+        roots.find((root) =>
+          resolvedSrc.every((src) => lexicalInside(src, [root]))
+        ) || cwd;
+      let destInput = destIn || path.join(cwd, defaultName);
+      if (!destInput.toLowerCase().endsWith(".zip")) destInput = `${destInput}.zip`;
+      if (!path.isAbsolute(destInput)) destInput = path.join(cwd, destInput);
+      if (
+        confine &&
+        roots.length &&
+        !lexicalInside(destInput, roots)
+      ) {
+        destInput = path.join(grantRoot, defaultName);
+      }
+
+      const dest = await resolve(destInput);
+      if (!dest.ok) return fail(dest.error);
+
+      const rels: string[] = [];
+      for (const src of resolvedSrc) {
+        const rel = path.relative(cwd, src);
+        if (!rel || rel.startsWith("..") || path.isAbsolute(rel)) {
+          return fail(
+            locale === "ja"
+              ? "同じフォルダから圧縮できません"
+              : "Cannot zip from different folders"
+          );
+        }
+        rels.push(zipArg(rel));
+      }
+
+      try {
+        await fs.access("/usr/bin/zip");
+      } catch {
+        return fail(
+          locale === "ja"
+            ? "この Mac に zip がありません"
+            : "zip is not available on this Mac"
+        );
+      }
+
+      await fs.mkdir(path.dirname(dest.path), { recursive: true });
+      try {
+        const st = await fs.lstat(dest.path);
+        if (st.isDirectory()) {
+          return fail(
+            locale === "ja"
+              ? "同じ名前のフォルダがあります"
+              : "A folder already exists at the zip path"
+          );
+        }
+        await fs.unlink(dest.path);
+      } catch {
+        /* dest does not exist yet */
+      }
+
+      const destRel = path.relative(cwd, dest.path);
+      const exclude =
+        destRel && !destRel.startsWith("..") && !path.isAbsolute(destRel)
+          ? ["-x", zipArg(destRel)]
+          : [];
+      const timeout =
+        grants.sandbox === "full_access" || escape
+          ? TIMEOUT_MS.full_access
+          : TIMEOUT_MS.workspace;
+      try {
+        await execFileAsync(
+          "/usr/bin/zip",
+          ["-r", "-q", dest.path, ...rels, ...exclude],
+          {
+            cwd,
+            timeout,
+            maxBuffer: 32 * 1024,
+            env: childEnv() as NodeJS.ProcessEnv,
+          }
+        );
+      } catch (err) {
+        const e = err as { message?: string; stderr?: string };
+        return fail(
+          typeof e.stderr === "string" && e.stderr.trim()
+            ? e.stderr.trim()
+            : e.message || "zip failed"
+        );
+      }
+      const st = await fs.stat(dest.path);
+      return JSON.stringify({
+        ok: true,
+        path: dest.path,
+        bytes: st.size,
+        files: rels,
+      });
+    }
+
     if (name === "run_command") {
       const command = typeof args.command === "string" ? args.command : "";
       if (!command.trim()) {
         return fail(locale === "ja" ? "コマンドが空です" : "Empty command");
       }
-      if (grants.sandbox !== "full_access") {
+      if (grants.sandbox === "read_only") {
         return fail(
           locale === "ja"
-            ? "シェルはフルアクセス（PETASSIST_ALLOW_FULL_ACCESS=1）のときだけです。ファイル用ツールを使ってください"
-            : "Shell needs full access (PETASSIST_ALLOW_FULL_ACCESS=1). Use the file tools."
+            ? "コマンドはフォルダを渡してからにしてね"
+            : "Commands need a granted folder first."
+        );
+      }
+      const verdict = inspectShellCommand(command);
+      if (verdict.ok === false && (verdict.fatal || !escape)) {
+        return fail(
+          locale === "ja" && verdict.fatal
+            ? `そのコマンドは使えないよ。${verdict.reason}`
+            : verdict.reason
         );
       }
       const cwdInput =

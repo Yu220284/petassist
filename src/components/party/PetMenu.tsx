@@ -1,8 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
+import { createPortal } from "react-dom";
 import { useI18n } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
+import { useFloatAnchor } from "@/lib/hooks/use-float-anchor";
+import { useCompanion, usePhonePresence } from "@/lib/hooks/use-companion";
+import { postCompanionParcel, postLeap } from "@/lib/companion/client";
+import { fileToParcel } from "@/lib/companion/parcel";
 import type { GatePanel } from "@/lib/pet-config";
 
 type PetMenuProps = {
@@ -11,6 +15,7 @@ type PetMenuProps = {
   stopped?: boolean;
   hidden?: boolean;
   pinned?: boolean;
+  anchorRef: RefObject<HTMLElement | null>;
   onTalk: () => void;
   onPanel: (panel: GatePanel) => void;
   onClose: () => void;
@@ -22,29 +27,79 @@ export function PetMenu({
   stopped,
   hidden,
   pinned,
+  anchorRef,
   onTalk,
   onPanel,
   onClose,
 }: PetMenuProps) {
   const { t } = useI18n();
   const desk = typeof window !== "undefined" ? window.petassist : undefined;
+  const companion = useCompanion();
+  const presence = usePhonePresence();
+  const { boxRef, style } = useFloatAnchor(anchorRef, Boolean(sticky));
+  const paired = companion?.paired ?? presence.paired;
+  const onPhone =
+    (companion?.locations[petId] ?? presence.locations[petId]) === "phone" ||
+    (companion?.locations[petId] ?? presence.locations[petId]) === "transit";
 
   const run = (fn: () => void | Promise<unknown>) => {
     void fn();
     onClose();
   };
 
-  return (
+  const node = (
     <div
-      className={cn(
-        "pet-no-drag absolute left-1/2 z-30 w-[176px] -translate-x-1/2 rounded-2xl bg-white p-1.5 shadow-lg",
-        sticky ? "top-full mt-1" : "bottom-full mb-1"
-      )}
+      ref={boxRef}
+      data-pet-float
+      style={style}
+      className="pet-no-drag z-[80] w-[176px] rounded-2xl bg-white p-1.5 shadow-lg"
       onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onContextMenu={(e) => e.preventDefault()}
       role="menu"
     >
-      {!stopped ? (
-        <MenuItem onClick={() => run(onTalk)}>{t.menu.talk}</MenuItem>
+      <MenuItem onClick={() => run(onTalk)}>{t.menu.talk}</MenuItem>
+      {paired ? (
+        onPhone ? (
+          <p className="px-2.5 py-1.5 text-[11px] font-medium text-slate-400">
+            {t.companion.onPhone}
+          </p>
+        ) : (
+          <MenuItem
+            onClick={() =>
+              run(() => {
+                if (companion) return companion.leapToPhone(petId);
+                const t0 = Date.now();
+                void desk?.leapPet?.(petId, "out");
+                return postLeap({ id: petId, from: "pc", to: "phone", t0 });
+              })
+            }
+          >
+            {t.companion.jumpToPhone}
+          </MenuItem>
+        )
+      ) : null}
+      {paired && !onPhone ? (
+        <label className="flex w-full cursor-pointer rounded-xl px-2.5 py-1.5 text-left text-[11px] font-medium text-[#302c55] hover:bg-slate-50">
+          {companion?.parcels[petId]
+            ? t.companion.replacePhoto
+            : t.companion.carryPhoto}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (!file) return;
+              run(async () => {
+                const parcel = await fileToParcel(file);
+                if (!parcel) return;
+                await postCompanionParcel({ id: petId, ...parcel });
+              });
+            }}
+          />
+        </label>
       ) : null}
       {desk ? (
         <MenuItem onClick={() => run(() => desk.showDock())}>
@@ -83,17 +138,15 @@ export function PetMenu({
         </MenuItem>
       ) : null}
       {!sticky && desk ? (
-        <>
-          <MenuItem onClick={() => run(() => desk.pin(petId))}>
-            {t.menu.pin}
-          </MenuItem>
-          <MenuItem onClick={() => run(() => desk.pinAllTop())}>
-            {t.menu.pinAll}
-          </MenuItem>
-        </>
+        <MenuItem onClick={() => run(() => desk.pin(petId))}>
+          {t.menu.pin}
+        </MenuItem>
       ) : null}
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(node, document.body);
 }
 
 function MenuItem({

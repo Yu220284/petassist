@@ -1,6 +1,9 @@
 "use client";
 
-const KEY = "pockassist.looks.v1";
+import { readStorage, writeStorage } from "@/lib/storage-key";
+
+const KEY = "petassist.looks.v1";
+const LEGACY_KEY = "pockassist.looks.v1";
 
 export type PetLook = { icon: string; accent: string };
 export type LooksMap = Record<string, PetLook>;
@@ -8,7 +11,7 @@ export type LooksMap = Record<string, PetLook>;
 export function loadLooks(): LooksMap {
   if (typeof window === "undefined") return {};
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = readStorage(KEY, [LEGACY_KEY]);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as LooksMap;
     return parsed && typeof parsed === "object" ? parsed : {};
@@ -20,7 +23,7 @@ export function loadLooks(): LooksMap {
 export function saveLooks(map: LooksMap) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(map));
+    writeStorage(KEY, JSON.stringify(map));
   } catch {
     /* ignore */
   }
@@ -33,7 +36,10 @@ export function upsertLook(
 ): LooksMap {
   const next = {
     ...prev,
-    [id]: { icon: patch.icon ?? prev[id]?.icon ?? "", accent: patch.accent ?? prev[id]?.accent ?? "" },
+    [id]: {
+      icon: patch.icon ?? prev[id]?.icon ?? "",
+      accent: patch.accent ?? prev[id]?.accent ?? "",
+    },
   };
   saveLooks(next);
   return next;
